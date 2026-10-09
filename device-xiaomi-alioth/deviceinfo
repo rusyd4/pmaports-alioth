@@ -23,7 +23,7 @@ deviceinfo_append_dtb="true"
 
 # Bootloader related
 deviceinfo_flash_method="fastboot"
-deviceinfo_kernel_cmdline="pmos_root=/dev/disk/by-partlabel/userdata pmos_rootfsopts=subvol=root selinux=0"
+deviceinfo_kernel_cmdline="pmos_root=/dev/disk/by-partlabel/linux pmos_rootfsopts=subvol=root selinux=0"
 deviceinfo_generate_bootimg="true"
 deviceinfo_bootimg_qcdt="false"
 deviceinfo_bootimg_dtb_second="false"
