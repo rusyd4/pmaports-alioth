@@ -66,14 +66,49 @@ Mainline drivers for the display panel, SPI bus, and touchscreen must be compile
    sudo sed -i '/\/boot/s/^/#/' /mnt/fedora/etc/fstab
    ```
 
-4. **Unlock root account**:
+4. **Unlock root account & Enable SSH**:
    *(Fedora raw images default to a locked root account `root:!`, which blocks emergency login)*:
    ```sh
    HASH=$(openssl passwd -6 fedora)
    sudo sed -i "s|^root:!:[^:]*|root:${HASH}:20565|" /mnt/fedora/etc/shadow
+
+   # Copy host SSH key for convenient remote access
+   sudo mkdir -p /mnt/fedora/root/.ssh
+   sudo cp ~/.ssh/id_*.pub /mnt/fedora/root/.ssh/authorized_keys
+   sudo chmod 700 /mnt/fedora/root/.ssh
+   sudo chmod 600 /mnt/fedora/root/.ssh/authorized_keys
+
+   # Enable SSH daemon and generate host keys
+   sudo ssh-keygen -t rsa -f /mnt/fedora/etc/ssh/ssh_host_rsa_key -N ""
+   sudo ssh-keygen -t ecdsa -f /mnt/fedora/etc/ssh/ssh_host_ecdsa_key -N ""
+   sudo ssh-keygen -t ed25519 -f /mnt/fedora/etc/ssh/ssh_host_ed25519_key -N ""
+   sudo ln -sf /usr/lib/systemd/system/sshd.service /mnt/fedora/etc/systemd/system/multi-user.target.wants/sshd.service
+
+   # Disable firewalld (kernel lacks full desktop nftables set; prevents SSH blocking)
+   sudo ln -sf /dev/null /mnt/fedora/etc/systemd/system/firewalld.service
    ```
 
-5. **Enable Bluetooth MAC Initialization Service**:
+5. **Disable Wi-Fi Power Saving**:
+   *(Qualcomm ath11k chip drops incoming ARP/broadcast packets when sleeping; disabling power saving keeps Wi-Fi responsive)*:
+   ```sh
+   cat << 'EOF' | sudo tee /mnt/fedora/etc/NetworkManager/conf.d/wifi-powersave.conf
+   [connection]
+   wifi.powersave = 2
+   EOF
+   ```
+
+6. **Enable Bluetooth & HID Keyboard Modules**:
+   *(Autoload Bluetooth UART, QCA transport, and HIDP/UHID drivers for keyboards and mice)*:
+   ```sh
+   cat << 'EOF' | sudo tee /mnt/fedora/etc/modules-load.d/bluetooth.conf
+   btqca
+   hci_uart
+   hidp
+   uhid
+   EOF
+   ```
+
+7. **Enable Bluetooth MAC Initialization Service**:
    *(Qualcomm QCA6390 controllers require an initial public MAC address to transition out of unconfigured state)*:
    ```sh
    cat << 'EOF' | sudo tee /mnt/fedora/usr/local/bin/alioth-bluetooth-init.sh
@@ -108,7 +143,7 @@ Mainline drivers for the display panel, SPI bus, and touchscreen must be compile
    sudo ln -sf /etc/systemd/system/alioth-bluetooth.service /mnt/fedora/etc/systemd/system/multi-user.target.wants/alioth-bluetooth.service
    ```
 
-6. **Convert to Android Sparse image**:
+8. **Convert to Android Sparse image**:
    ```sh
    sudo sync
    sudo umount /mnt/fedora
@@ -166,3 +201,26 @@ fastboot flash userdata ~/fedora-rootfs.simg
 fastboot set_active b
 fastboot reboot
 ```
+
+---
+
+## 6. Post-Installation Tips
+
+### Audio Volume Boost
+The Cirrus Logic `cs35l41` hardware amplifier defaults to low analog/digital gain stages in ALSA:
+* In terminal on the phone, run `alsamixer` -> press **F6** -> select the Qualcomm sound card.
+* Raise `RCV Analog PCM Volume`, `LCV Analog PCM Volume`, `RCV Digital PCM Volume`, and `LCV Digital PCM Volume` to maximum.
+* Save the mixer state: `sudo alsactl store`.
+* Alternatively, enable **"Raise maximum volume / Allow volume over 100%"** in KDE Sound Settings.
+
+### Bluetooth Keyboard Pairing
+* `hidp` and `uhid` drivers handle Bluetooth keyboards.
+* If a keyboard requests PIN / Passkey confirmation and the GUI dialog does not pop up, run `bluetoothctl`:
+  ```sh
+  bluetoothctl
+  default-agent
+  pair <MAC_ADDRESS>
+  # Type passkey on the keyboard and press Enter if prompted
+  trust <MAC_ADDRESS>
+  connect <MAC_ADDRESS>
+  ```
