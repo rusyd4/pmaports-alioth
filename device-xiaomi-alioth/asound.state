@@ -2,7 +2,7 @@ state.xiaomialioth {
 	control.1 {
 		iface MIXER
 		name 'RCV Digital PCM Volume'
-		value 913
+		value 817
 		comment {
 			access 'read write'
 			type INTEGER
@@ -10,13 +10,13 @@ state.xiaomialioth {
 			range '0 - 913'
 			dbmin -9999999
 			dbmax 1200
-			dbvalue.0 1200
+			dbvalue.0 0
 		}
 	}
 	control.2 {
 		iface MIXER
 		name 'RCV Analog PCM Volume'
-		value 20
+		value 18
 		comment {
 			access 'read write'
 			type INTEGER
@@ -24,7 +24,7 @@ state.xiaomialioth {
 			range '0 - 20'
 			dbmin 50
 			dbmax 2050
-			dbvalue.0 2050
+			dbvalue.0 1850
 		}
 	}
 	control.3 {
@@ -218,7 +218,7 @@ state.xiaomialioth {
 	control.19 {
 		iface MIXER
 		name 'LCV Digital PCM Volume'
-		value 913
+		value 817
 		comment {
 			access 'read write'
 			type INTEGER
@@ -226,13 +226,13 @@ state.xiaomialioth {
 			range '0 - 913'
 			dbmin -9999999
 			dbmax 1200
-			dbvalue.0 1200
+			dbvalue.0 0
 		}
 	}
 	control.20 {
 		iface MIXER
 		name 'LCV Analog PCM Volume'
-		value 20
+		value 18
 		comment {
 			access 'read write'
 			type INTEGER
@@ -240,7 +240,7 @@ state.xiaomialioth {
 			range '0 - 20'
 			dbmin 50
 			dbmax 2050
-			dbvalue.0 2050
+			dbvalue.0 1850
 		}
 	}
 	control.21 {
@@ -568,7 +568,7 @@ state.xiaomialioth {
 	control.45 {
 		iface MIXER
 		name 'RCV PCM Source'
-		value ASP
+		value DSP
 		comment {
 			access 'read write'
 			type ENUMERATED
@@ -704,7 +704,7 @@ state.xiaomialioth {
 	control.53 {
 		iface MIXER
 		name 'LCV PCM Source'
-		value ASP
+		value DSP
 		comment {
 			access 'read write'
 			type ENUMERATED

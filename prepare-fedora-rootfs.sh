@@ -39,11 +39,6 @@ if [ -f "${REPO_DIR}/device-xiaomi-alioth/asound.state" ]; then
     cp "${REPO_DIR}/device-xiaomi-alioth/asound.state" "${ROOTFS}/var/lib/alsa/asound.state"
 fi
 
-mkdir -p "${ROOTFS}/etc/wireplumber/wireplumber.conf.d"
-if [ -f "${REPO_DIR}/device-xiaomi-alioth/50-alioth-audio.conf" ]; then
-    cp "${REPO_DIR}/device-xiaomi-alioth/50-alioth-audio.conf" "${ROOTFS}/etc/wireplumber/wireplumber.conf.d/"
-fi
-
 echo "==> [3/7] Setting up Bluetooth Controller Service & Autoload Modules..."
 mkdir -p "${ROOTFS}/usr/local/bin" "${ROOTFS}/etc/systemd/system/multi-user.target.wants" "${ROOTFS}/etc/modules-load.d"
 cp "${REPO_DIR}/device-xiaomi-alioth/alioth-bluetooth-init.sh" "${ROOTFS}/usr/local/bin/"
