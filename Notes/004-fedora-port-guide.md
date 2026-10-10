@@ -73,7 +73,42 @@ Mainline drivers for the display panel, SPI bus, and touchscreen must be compile
    sudo sed -i "s|^root:!:[^:]*|root:${HASH}:20565|" /mnt/fedora/etc/shadow
    ```
 
-5. **Convert to Android Sparse image**:
+5. **Enable Bluetooth MAC Initialization Service**:
+   *(Qualcomm QCA6390 controllers require an initial public MAC address to transition out of unconfigured state)*:
+   ```sh
+   cat << 'EOF' | sudo tee /mnt/fedora/usr/local/bin/alioth-bluetooth-init.sh
+   #!/bin/sh
+   SERIAL=$(grep -o "serialno=[^ ]*" /proc/cmdline | cut -d= -f2)
+   if [ -z "$SERIAL" ]; then
+       SERIAL=$(cat /etc/machine-id 2>/dev/null || echo "alioth-default")
+   fi
+   BT_MAC=$(echo "${SERIAL}-BT" | sha256sum | awk '{printf("0200%010s\n", $1)}' | cut -c1-12 | sed 's/\(..\)/\1:/g' | sed '$s/:$//')
+
+   if btmgmt config 2>&1 | grep -q "missing options: public-address"; then
+       btmgmt --index 0 public-addr "$BT_MAC"
+   fi
+   rfkill unblock bluetooth
+   EOF
+   sudo chmod +x /mnt/fedora/usr/local/bin/alioth-bluetooth-init.sh
+
+   cat << 'EOF' | sudo tee /mnt/fedora/etc/systemd/system/alioth-bluetooth.service
+   [Unit]
+   Description=Initialize Alioth Bluetooth Controller MAC
+   Before=bluetooth.service
+   Wants=bluetooth.service
+
+   [Service]
+   Type=oneshot
+   ExecStart=/usr/local/bin/alioth-bluetooth-init.sh
+   RemainAfterExit=yes
+
+   [Install]
+   WantedBy=multi-user.target
+   EOF
+   sudo ln -sf /etc/systemd/system/alioth-bluetooth.service /mnt/fedora/etc/systemd/system/multi-user.target.wants/alioth-bluetooth.service
+   ```
+
+6. **Convert to Android Sparse image**:
    ```sh
    sudo sync
    sudo umount /mnt/fedora
