@@ -1,0 +1,12 @@
+[Unit]
+Description=Initialize Alioth Bluetooth Controller MAC
+Before=bluetooth.service
+Wants=bluetooth.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/alioth-bluetooth-init.sh
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

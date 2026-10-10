@@ -34,7 +34,7 @@ Mainline drivers for the display panel, SPI bus, and touchscreen must be compile
 
 ---
 
-## 3. Prepare Fedora Rootfs
+## 3. Prepare Fedora Rootfs (Pre-Boot Automation)
 
 1. **Extract and mount the raw Fedora image**:
    ```sh
@@ -44,106 +44,19 @@ Mainline drivers for the display panel, SPI bus, and touchscreen must be compile
    sudo mount -o subvol=root /dev/loop0p3 /mnt/fedora
    ```
 
-2. **Copy kernel modules and device firmware**:
+2. **Run pre-boot configuration script**:
+   *(Injects kernel modules, firmware, calibrated ALSA state, audio UCM profiles, Bluetooth services, Wi-Fi powersave, SSH keys, and fixes fstab in one step)*:
    ```sh
-   sudo cp -r ~/.local/var/pmbootstrap/chroot_rootfs_xiaomi-alioth/lib/modules/* \
-     /mnt/fedora/usr/lib/modules/
-
-   sudo cp -r ~/.local/var/pmbootstrap/chroot_rootfs_xiaomi-alioth/lib/firmware/* \
-     /mnt/fedora/usr/lib/firmware/
-
-   # ALSA Audio UCM profiles
-   sudo mkdir -p /mnt/fedora/usr/share/alsa/ucm2/Xiaomi/alioth /mnt/fedora/usr/share/alsa/ucm2/conf.d/sm8250
-   sudo cp ~/pmaports-alioth/device-xiaomi-alioth/alsa-ucm-conf/*.conf \
-     /mnt/fedora/usr/share/alsa/ucm2/Xiaomi/alioth/
-   sudo ln -sf ../../Xiaomi/alioth/alioth.conf \
-     /mnt/fedora/usr/share/alsa/ucm2/conf.d/sm8250/xiaomi-alioth.conf
+   sudo ./prepare-fedora-rootfs.sh /mnt/fedora
    ```
 
-3. **Disable unused `/boot` mounts in `/etc/fstab`**:
-   *(Fedora raw images mount `/boot` and `/boot/efi` by UUID. Since we only flash the root filesystem to userdata, comment them out to prevent a 90s systemd timeout / emergency mode)*:
+3. **Convert to Android Sparse image**:
    ```sh
-   sudo sed -i '/\/boot/s/^/#/' /mnt/fedora/etc/fstab
+   sudo sync
+   sudo umount /mnt/fedora
+   sudo img2simg /dev/loop0p3 ~/fedora-rootfs.simg
+   sudo losetup -d /dev/loop0
    ```
-
-4. **Unlock root account & Enable SSH**:
-   *(Fedora raw images default to a locked root account `root:!`, which blocks emergency login)*:
-   ```sh
-   HASH=$(openssl passwd -6 fedora)
-   sudo sed -i "s|^root:!:[^:]*|root:${HASH}:20565|" /mnt/fedora/etc/shadow
-
-   # Copy host SSH key for convenient remote access
-   sudo mkdir -p /mnt/fedora/root/.ssh
-   sudo cp ~/.ssh/id_*.pub /mnt/fedora/root/.ssh/authorized_keys
-   sudo chmod 700 /mnt/fedora/root/.ssh
-   sudo chmod 600 /mnt/fedora/root/.ssh/authorized_keys
-
-   # Enable SSH daemon and generate host keys
-   sudo ssh-keygen -t rsa -f /mnt/fedora/etc/ssh/ssh_host_rsa_key -N ""
-   sudo ssh-keygen -t ecdsa -f /mnt/fedora/etc/ssh/ssh_host_ecdsa_key -N ""
-   sudo ssh-keygen -t ed25519 -f /mnt/fedora/etc/ssh/ssh_host_ed25519_key -N ""
-   sudo ln -sf /usr/lib/systemd/system/sshd.service /mnt/fedora/etc/systemd/system/multi-user.target.wants/sshd.service
-
-   # Disable firewalld (kernel lacks full desktop nftables set; prevents SSH blocking)
-   sudo ln -sf /dev/null /mnt/fedora/etc/systemd/system/firewalld.service
-   ```
-
-5. **Disable Wi-Fi Power Saving**:
-   *(Qualcomm ath11k chip drops incoming ARP/broadcast packets when sleeping; disabling power saving keeps Wi-Fi responsive)*:
-   ```sh
-   cat << 'EOF' | sudo tee /mnt/fedora/etc/NetworkManager/conf.d/wifi-powersave.conf
-   [connection]
-   wifi.powersave = 2
-   EOF
-   ```
-
-6. **Enable Bluetooth & HID Keyboard Modules**:
-   *(Autoload Bluetooth UART, QCA transport, and HIDP/UHID drivers for keyboards and mice)*:
-   ```sh
-   cat << 'EOF' | sudo tee /mnt/fedora/etc/modules-load.d/bluetooth.conf
-   btqca
-   hci_uart
-   hidp
-   uhid
-   EOF
-   ```
-
-7. **Enable Bluetooth MAC Initialization Service**:
-   *(Qualcomm QCA6390 controllers require an initial public MAC address to transition out of unconfigured state)*:
-   ```sh
-   cat << 'EOF' | sudo tee /mnt/fedora/usr/local/bin/alioth-bluetooth-init.sh
-   #!/bin/sh
-   SERIAL=$(grep -o "serialno=[^ ]*" /proc/cmdline | cut -d= -f2)
-   if [ -z "$SERIAL" ]; then
-       SERIAL=$(cat /etc/machine-id 2>/dev/null || echo "alioth-default")
-   fi
-   BT_MAC=$(echo "${SERIAL}-BT" | sha256sum | awk '{printf("0200%010s\n", $1)}' | cut -c1-12 | sed 's/\(..\)/\1:/g' | sed '$s/:$//')
-
-   if btmgmt config 2>&1 | grep -q "missing options: public-address"; then
-       btmgmt --index 0 public-addr "$BT_MAC"
-   fi
-   rfkill unblock bluetooth
-   EOF
-   sudo chmod +x /mnt/fedora/usr/local/bin/alioth-bluetooth-init.sh
-
-   cat << 'EOF' | sudo tee /mnt/fedora/etc/systemd/system/alioth-bluetooth.service
-   [Unit]
-   Description=Initialize Alioth Bluetooth Controller MAC
-   Before=bluetooth.service
-   Wants=bluetooth.service
-
-   [Service]
-   Type=oneshot
-   ExecStart=/usr/local/bin/alioth-bluetooth-init.sh
-   RemainAfterExit=yes
-
-   [Install]
-   WantedBy=multi-user.target
-   EOF
-   sudo ln -sf /etc/systemd/system/alioth-bluetooth.service /mnt/fedora/etc/systemd/system/multi-user.target.wants/alioth-bluetooth.service
-   ```
-
-8. **Convert to Android Sparse image**:
    ```sh
    sudo sync
    sudo umount /mnt/fedora
