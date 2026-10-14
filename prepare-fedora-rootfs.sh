@@ -9,7 +9,9 @@ set -euo pipefail
 
 ROOTFS="${1:-/mnt/fedora}"
 REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PMB_ROOTFS="${HOME}/.local/var/pmbootstrap/chroot_rootfs_xiaomi-alioth"
+REAL_USER="${SUDO_USER:-$USER}"
+USER_HOME="$(getent passwd "$REAL_USER" | cut -d: -f6)"
+PMB_ROOTFS="${USER_HOME}/.local/var/pmbootstrap/chroot_rootfs_xiaomi-alioth"
 
 if [ ! -d "${ROOTFS}/usr" ]; then
     echo "ERROR: ${ROOTFS} does not appear to be a mounted rootfs!" >&2
