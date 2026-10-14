@@ -66,7 +66,10 @@ power_cycle_slot () {
 # power off SIM".  Read the id out of the card status, per slot.
 n=0
 changed=1
-for slot in 1 2; do
+# User requested Slot 2 (089668852546) as Primary
+PRIMARY_SLOT=${MODEM_PRIMARY_SLOT:-2}
+slots=("$PRIMARY_SLOT" $([ "$PRIMARY_SLOT" = "1" ] && echo 2 || echo 1))
+for slot in "${slots[@]}"; do
     aid=$(slot_aid "$slot")
     [ -n "$aid" ] || { log "slot $slot: no usim application"; continue; }
     n=$((n + 1))

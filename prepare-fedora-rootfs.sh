@@ -33,11 +33,10 @@ if [ -d "${PMB_ROOTFS}/lib/firmware" ]; then
     cp -r "${PMB_ROOTFS}"/lib/firmware/* "${ROOTFS}/usr/lib/firmware/"
 fi
 
-KERNEL_VER=$(ls "${ROOTFS}/usr/lib/modules" 2>/dev/null | head -n 1 || true)
-if [ -n "${KERNEL_VER}" ]; then
-    echo "    Updating module dependencies (depmod) for ${KERNEL_VER}..."
-    depmod -a -b "${ROOTFS}" "${KERNEL_VER}" || true
-fi
+for kv in $(ls "${ROOTFS}/usr/lib/modules" 2>/dev/null); do
+    echo "    Updating module dependencies (depmod) for ${kv}..."
+    depmod -a -b "${ROOTFS}" "${kv}" || true
+done
 
 echo "==> [2/8] Injecting Audio UCM2 Profiles & Calibrated ALSA State..."
 mkdir -p "${ROOTFS}/usr/share/alsa/ucm2/Xiaomi/alioth"

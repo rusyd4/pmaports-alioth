@@ -1,6 +1,5 @@
-diff -uNrp '--exclude=*.rej' '--exclude=*.orig' '--exclude=scripts' '--exclude=.config*' '--exclude=include/config*' '--exclude=include/generated*' '--exclude=arch/arm64/include/generated*' a/arch/arm64/boot/dts/qcom/sm8250-xiaomi-alioth.dts b/arch/arm64/boot/dts/qcom/sm8250-xiaomi-alioth.dts
---- a/arch/arm64/boot/dts/qcom/sm8250-xiaomi-alioth.dts	2026-10-13 21:34:08.923360012 +0700
-+++ b/arch/arm64/boot/dts/qcom/sm8250-xiaomi-alioth.dts	2026-10-14 08:29:17.256373050 +0700
+--- a/arch/arm64/boot/dts/qcom/sm8250-xiaomi-alioth.dts	2026-08-29 13:19:00.000000000 +0000
++++ b/arch/arm64/boot/dts/qcom/sm8250-xiaomi-alioth.dts	2026-10-14 13:00:00.000000000 +0000
 @@ -1115,7 +1115,7 @@
  
  &slpi {
@@ -51,9 +50,8 @@ diff -uNrp '--exclude=*.rej' '--exclude=*.orig' '--exclude=scripts' '--exclude=.
 +		mdm2ap-errfatal-gpios = <&tlmm 1 GPIO_ACTIVE_HIGH>;
 +	};
 +};
-diff -uNrp '--exclude=*.rej' '--exclude=*.orig' '--exclude=scripts' '--exclude=.config*' '--exclude=include/config*' '--exclude=include/generated*' '--exclude=arch/arm64/include/generated*' a/drivers/bus/mhi/common.h b/drivers/bus/mhi/common.h
---- a/drivers/bus/mhi/common.h	2026-03-15 17:54:23.000000000 +0700
-+++ b/drivers/bus/mhi/common.h	2026-10-13 21:29:57.900075826 +0700
+--- a/drivers/bus/mhi/common.h	2026-08-29 13:19:00.000000000 +0000
++++ b/drivers/bus/mhi/common.h	2026-10-14 13:00:00.000000000 +0000
 @@ -164,6 +164,29 @@
  #define MHI_TRE_GET_EV_VEID(tre)	FIELD_GET(GENMASK(23, 16), (MHI_TRE_GET_DWORD(tre, 0)))
  #define MHI_TRE_GET_EV_LINKSPEED(tre)	FIELD_GET(GENMASK(31, 24), (MHI_TRE_GET_DWORD(tre, 1)))
@@ -84,10 +82,9 @@ diff -uNrp '--exclude=*.rej' '--exclude=*.orig' '--exclude=scripts' '--exclude=.
  
  /* State change event */
  #define MHI_SC_EV_PTR			0
-diff -uNrp '--exclude=*.rej' '--exclude=*.orig' '--exclude=scripts' '--exclude=.config*' '--exclude=include/config*' '--exclude=include/generated*' '--exclude=arch/arm64/include/generated*' a/drivers/bus/mhi/host/boot.c b/drivers/bus/mhi/host/boot.c
---- a/drivers/bus/mhi/host/boot.c	2026-03-15 17:54:23.000000000 +0700
-+++ b/drivers/bus/mhi/host/boot.c	2026-10-13 21:29:57.900178356 +0700
-@@ -575,6 +575,26 @@ skip_req_fw:
+--- a/drivers/bus/mhi/host/boot.c	2026-08-29 13:19:00.000000000 +0000
++++ b/drivers/bus/mhi/host/boot.c	2026-10-14 13:00:00.000000000 +0000
+@@ -558,6 +558,26 @@ skip_req_fw:
  		goto fw_load_ready_state;
  	}
  
@@ -114,10 +111,9 @@ diff -uNrp '--exclude=*.rej' '--exclude=*.orig' '--exclude=scripts' '--exclude=.
  	write_lock_irq(&mhi_cntrl->pm_lock);
  	mhi_cntrl->dev_state = MHI_STATE_RESET;
  	write_unlock_irq(&mhi_cntrl->pm_lock);
-diff -uNrp '--exclude=*.rej' '--exclude=*.orig' '--exclude=scripts' '--exclude=.config*' '--exclude=include/config*' '--exclude=include/generated*' '--exclude=arch/arm64/include/generated*' a/drivers/bus/mhi/host/init.c b/drivers/bus/mhi/host/init.c
---- a/drivers/bus/mhi/host/init.c	2026-03-15 17:54:23.000000000 +0700
-+++ b/drivers/bus/mhi/host/init.c	2026-10-13 21:29:57.900278737 +0700
-@@ -466,6 +466,96 @@ error_alloc_chan_ctxt:
+--- a/drivers/bus/mhi/host/init.c	2026-08-29 13:19:00.000000000 +0000
++++ b/drivers/bus/mhi/host/init.c	2026-10-14 13:00:00.000000000 +0000
+@@ -465,6 +465,96 @@ error_alloc_chan_ctxt:
  	return ret;
  }
  
@@ -214,7 +210,7 @@ diff -uNrp '--exclude=*.rej' '--exclude=*.orig' '--exclude=scripts' '--exclude=.
  int mhi_init_mmio(struct mhi_controller *mhi_cntrl)
  {
  	u32 val;
-@@ -581,6 +671,9 @@ int mhi_init_mmio(struct mhi_controller
+@@ -580,6 +670,9 @@ int mhi_init_mmio(struct mhi_controller
  		mhi_event->ring.db_addr = base + val;
  	}
  
@@ -224,7 +220,7 @@ diff -uNrp '--exclude=*.rej' '--exclude=*.orig' '--exclude=scripts' '--exclude=.
  	/* Setup DB register for primary CMD rings */
  	mhi_cntrl->mhi_cmd[PRIMARY_CMD_RING].ring.db_addr = base + CRDB_LOWER;
  
-@@ -748,6 +841,9 @@ static int parse_ev_cfg(struct mhi_contr
+@@ -746,6 +839,9 @@ static int parse_ev_cfg(struct mhi_contr
  		case MHI_ER_CTRL:
  			mhi_event->process_event = mhi_process_ctrl_ev_ring;
  			break;
@@ -234,7 +230,27 @@ diff -uNrp '--exclude=*.rej' '--exclude=*.orig' '--exclude=scripts' '--exclude=.
  		default:
  			dev_err(dev, "Event Ring type not supported\n");
  			goto error_ev_cfg;
-@@ -941,12 +1037,14 @@ int mhi_register_controller(struct mhi_c
+@@ -839,9 +935,19 @@ static int parse_ch_cfg(struct mhi_contr
+ 		mhi_chan->lpm_notify = ch_cfg->lpm_notify;
+ 		mhi_chan->offload_ch = ch_cfg->offload_channel;
+ 		mhi_chan->db_cfg.reset_req = ch_cfg->doorbell_mode_switch;
++		mhi_chan->pre_alloc = ch_cfg->auto_queue;
+ 		mhi_chan->wake_capable = ch_cfg->wake_capable;
+ 
+ 		/*
++		 * If MHI host allocates buffers, then the channel direction
++		 * should be DMA_FROM_DEVICE
++		 */
++		if (mhi_chan->pre_alloc && mhi_chan->dir != DMA_FROM_DEVICE) {
++			dev_err(dev, "Invalid channel configuration\n");
++			goto error_chan_cfg;
++		}
++
++		/*
+ 		 * Bi-directional and direction less channel must be an
+ 		 * offload channel
+ 		 */
+@@ -929,12 +1035,14 @@ int mhi_register_controller(struct mhi_c
  	    !mhi_cntrl->runtime_get || !mhi_cntrl->runtime_put ||
  	    !mhi_cntrl->status_cb || !mhi_cntrl->read_reg ||
  	    !mhi_cntrl->write_reg || !mhi_cntrl->nr_irqs ||
@@ -249,9 +265,9 @@ diff -uNrp '--exclude=*.rej' '--exclude=*.orig' '--exclude=scripts' '--exclude=.
  		return -EINVAL;
 +	}
  
- 	mhi_cntrl->mhi_cmd = kcalloc(NR_OF_CMD_RINGS,
- 				     sizeof(*mhi_cntrl->mhi_cmd), GFP_KERNEL);
-@@ -961,6 +1059,8 @@ int mhi_register_controller(struct mhi_c
+ 	mhi_cntrl->mhi_cmd = kzalloc_objs(*mhi_cntrl->mhi_cmd, NR_OF_CMD_RINGS);
+ 	if (!mhi_cntrl->mhi_cmd) {
+@@ -948,6 +1056,8 @@ int mhi_register_controller(struct mhi_c
  	spin_lock_init(&mhi_cntrl->transition_lock);
  	spin_lock_init(&mhi_cntrl->wlock);
  	INIT_WORK(&mhi_cntrl->st_worker, mhi_pm_st_worker);
@@ -260,7 +276,7 @@ diff -uNrp '--exclude=*.rej' '--exclude=*.orig' '--exclude=scripts' '--exclude=.
  	init_waitqueue_head(&mhi_cntrl->state_event);
  
  	mhi_cntrl->hiprio_wq = alloc_ordered_workqueue("mhi_hiprio_wq", WQ_HIGHPRI);
-@@ -1076,6 +1176,7 @@ void mhi_unregister_controller(struct mh
+@@ -1063,6 +1173,7 @@ void mhi_unregister_controller(struct mh
  	unsigned int i;
  
  	mhi_deinit_free_irq(mhi_cntrl);
@@ -268,9 +284,8 @@ diff -uNrp '--exclude=*.rej' '--exclude=*.orig' '--exclude=scripts' '--exclude=.
  	mhi_destroy_debugfs(mhi_cntrl);
  
  	if (mhi_cntrl->edl_trigger)
-diff -uNrp '--exclude=*.rej' '--exclude=*.orig' '--exclude=scripts' '--exclude=.config*' '--exclude=include/config*' '--exclude=include/generated*' '--exclude=arch/arm64/include/generated*' a/drivers/bus/mhi/host/internal.h b/drivers/bus/mhi/host/internal.h
---- a/drivers/bus/mhi/host/internal.h	2026-03-15 17:54:23.000000000 +0700
-+++ b/drivers/bus/mhi/host/internal.h	2026-10-13 21:29:57.900389085 +0700
+--- a/drivers/bus/mhi/host/internal.h	2026-08-29 13:19:00.000000000 +0000
++++ b/drivers/bus/mhi/host/internal.h	2026-10-14 13:00:00.000000000 +0000
 @@ -74,7 +74,8 @@ extern const char * const mhi_ee_str[MHI
  
  #define MHI_IN_PBL(ee) (ee == MHI_EE_PBL || ee == MHI_EE_PTHRU || \
@@ -281,7 +296,15 @@ diff -uNrp '--exclude=*.rej' '--exclude=*.orig' '--exclude=scripts' '--exclude=.
  #define MHI_FW_LOAD_CAPABLE(ee) (ee == MHI_EE_PBL || ee == MHI_EE_EDL)
  #define MHI_IN_MISSION_MODE(ee) (ee == MHI_EE_AMSS || ee == MHI_EE_WFW || \
  				 ee == MHI_EE_FP)
-@@ -321,6 +322,7 @@ struct mhi_device *mhi_alloc_device(stru
+@@ -286,6 +287,7 @@ struct mhi_chan {
+ 	bool lpm_notify;
+ 	bool configured;
+ 	bool offload_ch;
++	bool pre_alloc;
+ 	bool wake_capable;
+ };
+ 
+@@ -320,6 +322,7 @@ struct mhi_device *mhi_alloc_device(stru
  
  int mhi_destroy_device(struct device *dev, void *data);
  void mhi_create_devices(struct mhi_controller *mhi_cntrl);
@@ -289,7 +312,17 @@ diff -uNrp '--exclude=*.rej' '--exclude=*.orig' '--exclude=scripts' '--exclude=.
  
  int mhi_alloc_bhie_table(struct mhi_controller *mhi_cntrl,
  			 struct image_info **image_info, size_t alloc_size);
-@@ -403,6 +405,9 @@ void mhi_ctrl_ev_task(unsigned long data
+@@ -388,6 +391,9 @@ int mhi_rddm_prepare(struct mhi_controll
+ 		      struct image_info *img_info);
+ void mhi_fw_load_handler(struct mhi_controller *mhi_cntrl);
+ 
++/* Automatically allocate and queue inbound buffers */
++#define MHI_CH_INBOUND_ALLOC_BUFS BIT(0)
++
+ int mhi_init_chan_ctxt(struct mhi_controller *mhi_cntrl,
+ 		       struct mhi_chan *mhi_chan);
+ void mhi_deinit_chan_ctxt(struct mhi_controller *mhi_cntrl,
+@@ -400,6 +406,9 @@ void mhi_ctrl_ev_task(unsigned long data
  void mhi_ev_task(unsigned long data);
  int mhi_process_data_event_ring(struct mhi_controller *mhi_cntrl,
  				struct mhi_event *mhi_event, u32 event_quota);
@@ -299,9 +332,8 @@ diff -uNrp '--exclude=*.rej' '--exclude=*.orig' '--exclude=scripts' '--exclude=.
  int mhi_process_ctrl_ev_ring(struct mhi_controller *mhi_cntrl,
  			     struct mhi_event *mhi_event, u32 event_quota);
  void mhi_uevent_notify(struct mhi_controller *mhi_cntrl, enum mhi_ee_type ee);
-diff -uNrp '--exclude=*.rej' '--exclude=*.orig' '--exclude=scripts' '--exclude=.config*' '--exclude=include/config*' '--exclude=include/generated*' '--exclude=arch/arm64/include/generated*' a/drivers/bus/mhi/host/main.c b/drivers/bus/mhi/host/main.c
---- a/drivers/bus/mhi/host/main.c	2026-03-15 17:54:23.000000000 +0700
-+++ b/drivers/bus/mhi/host/main.c	2026-10-13 21:29:57.900476326 +0700
+--- a/drivers/bus/mhi/host/main.c	2026-08-29 13:19:00.000000000 +0000
++++ b/drivers/bus/mhi/host/main.c	2026-10-14 13:00:00.000000000 +0000
 @@ -431,6 +431,9 @@ void mhi_create_devices(struct mhi_contr
  
  irqreturn_t mhi_irq_handler(int irq_number, void *dev)
@@ -328,7 +360,7 @@ diff -uNrp '--exclude=*.rej' '--exclude=*.orig' '--exclude=scripts' '--exclude=.
  	trace_mhi_intvec_states(mhi_cntrl, ee, state);
  	if (state == MHI_STATE_SYS_ERR) {
  		dev_dbg(dev, "System error detected\n");
-@@ -701,7 +713,9 @@ static int parse_xfer_event(struct mhi_c
+@@ -684,7 +696,9 @@ static int parse_xfer_event(struct mhi_c
  	}
  	case MHI_EV_CC_BAD_TRE:
  	default:
@@ -339,7 +371,7 @@ diff -uNrp '--exclude=*.rej' '--exclude=*.orig' '--exclude=scripts' '--exclude=.
  		break;
  	} /* switch(MHI_EV_READ_CODE(EV_TRB_CODE,event)) */
  
-@@ -813,6 +827,112 @@ static void mhi_process_cmd_completion(s
+@@ -796,6 +810,112 @@ static void mhi_process_cmd_completion(s
  	mhi_del_ring_element(mhi_cntrl, mhi_ring);
  }
  
@@ -452,7 +484,7 @@ diff -uNrp '--exclude=*.rej' '--exclude=*.orig' '--exclude=scripts' '--exclude=.
  int mhi_process_ctrl_ev_ring(struct mhi_controller *mhi_cntrl,
  			     struct mhi_event *mhi_event,
  			     u32 event_quota)
-@@ -912,8 +1032,6 @@ int mhi_process_ctrl_ev_ring(struct mhi_
+@@ -895,8 +1015,6 @@ int mhi_process_ctrl_ev_ring(struct mhi_
  			enum dev_st_transition st = DEV_ST_TRANSITION_MAX;
  			enum mhi_ee_type event = MHI_TRE_GET_EV_EXECENV(local_rp);
  
@@ -461,7 +493,7 @@ diff -uNrp '--exclude=*.rej' '--exclude=*.orig' '--exclude=scripts' '--exclude=.
  			switch (event) {
  			case MHI_EE_SBL:
  				st = DEV_ST_TRANSITION_SBL;
-@@ -958,7 +1076,11 @@ int mhi_process_ctrl_ev_ring(struct mhi_
+@@ -941,7 +1059,11 @@ int mhi_process_ctrl_ev_ring(struct mhi_
  			}
  			break;
  		default:
@@ -474,9 +506,36 @@ diff -uNrp '--exclude=*.rej' '--exclude=*.orig' '--exclude=scripts' '--exclude=.
  			break;
  		}
  
-diff -uNrp '--exclude=*.rej' '--exclude=*.orig' '--exclude=scripts' '--exclude=.config*' '--exclude=include/config*' '--exclude=include/generated*' '--exclude=arch/arm64/include/generated*' a/drivers/bus/mhi/host/pci_generic.c b/drivers/bus/mhi/host/pci_generic.c
---- a/drivers/bus/mhi/host/pci_generic.c	2026-03-15 17:54:23.000000000 +0700
-+++ b/drivers/bus/mhi/host/pci_generic.c	2026-10-13 23:00:30.073859192 +0700
+@@ -1533,8 +1655,12 @@ static void mhi_reset_data_chan(struct m
+ 		mhi_del_ring_element(mhi_cntrl, buf_ring);
+ 		mhi_del_ring_element(mhi_cntrl, tre_ring);
+ 
+-		result.buf_addr = buf_info->cb_buf;
+-		mhi_chan->xfer_cb(mhi_chan->mhi_dev, &result);
++		if (mhi_chan->pre_alloc) {
++			kfree(buf_info->cb_buf);
++		} else {
++			result.buf_addr = buf_info->cb_buf;
++			mhi_chan->xfer_cb(mhi_chan->mhi_dev, &result);
++		}
+ 	}
+ }
+ 
+@@ -1595,6 +1721,12 @@ int mhi_prepare_for_transfer(struct mhi_
+ }
+ EXPORT_SYMBOL_GPL(mhi_prepare_for_transfer);
+ 
++int mhi_prepare_for_transfer_autoqueue(struct mhi_device *mhi_dev)
++{
++	return __mhi_prepare_for_transfer(mhi_dev, MHI_CH_INBOUND_ALLOC_BUFS);
++}
++EXPORT_SYMBOL_GPL(mhi_prepare_for_transfer_autoqueue);
++
+ void mhi_unprepare_from_transfer(struct mhi_device *mhi_dev)
+ {
+ 	struct mhi_controller *mhi_cntrl = mhi_dev->mhi_cntrl;
+--- a/drivers/bus/mhi/host/pci_generic.c	2026-08-29 13:19:00.000000000 +0000
++++ b/drivers/bus/mhi/host/pci_generic.c	2026-10-14 13:00:00.000000000 +0000
 @@ -8,12 +8,24 @@
   * Copyright (C) 2020 Linaro Ltd <loic.poulain@linaro.org>
   */
@@ -640,8 +699,8 @@ diff -uNrp '--exclude=*.rej' '--exclude=*.orig' '--exclude=scripts' '--exclude=.
  
  #define MHI_CHANNEL_CONFIG_DL_FP(ch_num, ch_name, el_count, ev_ring) \
  	{						\
-@@ -407,6 +493,131 @@ static const struct mhi_pci_dev_info mhi
- 	.sideband_wake = false,
+@@ -425,6 +511,131 @@ static const struct mhi_pci_dev_info mhi
+ 	.edl_trigger = true,
  };
  
 +/*
@@ -772,7 +831,7 @@ diff -uNrp '--exclude=*.rej' '--exclude=*.orig' '--exclude=scripts' '--exclude=.
  static const struct mhi_pci_dev_info mhi_qcom_sdx24_info = {
  	.name = "qcom-sdx24",
  	.edl = "qcom/prog_firehose_sdx24.mbn",
-@@ -912,7 +1123,7 @@ static const struct pci_device_id mhi_pc
+@@ -962,7 +1173,7 @@ static const struct pci_device_id mhi_pc
  	{ PCI_DEVICE(PCI_VENDOR_ID_QCOM, 0x0304),
  		.driver_data = (kernel_ulong_t) &mhi_qcom_sdx24_info },
  	{ PCI_DEVICE_SUB(PCI_VENDOR_ID_QCOM, 0x0306, PCI_VENDOR_ID_QCOM, 0x010c),
@@ -781,7 +840,7 @@ diff -uNrp '--exclude=*.rej' '--exclude=*.orig' '--exclude=scripts' '--exclude=.
  	/* EM919x (sdx55), use the same vid:pid as qcom-sdx55m */
  	{ PCI_DEVICE_SUB(PCI_VENDOR_ID_QCOM, 0x0306, 0x18d7, 0x0200),
  		.driver_data = (kernel_ulong_t) &mhi_sierra_em919x_info },
-@@ -1041,11 +1252,63 @@ struct mhi_pci_device {
+@@ -1091,11 +1302,63 @@ struct mhi_pci_device {
  	struct mhi_controller mhi_cntrl;
  	struct pci_saved_state *pci_state;
  	struct work_struct recovery_work;
@@ -845,7 +904,7 @@ diff -uNrp '--exclude=*.rej' '--exclude=*.orig' '--exclude=scripts' '--exclude=.
  static int mhi_pci_read_reg(struct mhi_controller *mhi_cntrl,
  			    void __iomem *addr, u32 *out)
  {
-@@ -1059,6 +1322,9 @@ static void mhi_pci_write_reg(struct mhi
+@@ -1109,6 +1372,9 @@ static void mhi_pci_write_reg(struct mhi
  	writel(val, addr);
  }
  
@@ -855,7 +914,7 @@ diff -uNrp '--exclude=*.rej' '--exclude=*.orig' '--exclude=scripts' '--exclude=.
  static void mhi_pci_status_cb(struct mhi_controller *mhi_cntrl,
  			      enum mhi_callback cb)
  {
-@@ -1073,6 +1339,16 @@ static void mhi_pci_status_cb(struct mhi
+@@ -1123,6 +1389,16 @@ static void mhi_pci_status_cb(struct mhi
  		break;
  	case MHI_CB_EE_MISSION_MODE:
  		pm_runtime_allow(&pdev->dev);
@@ -872,7 +931,7 @@ diff -uNrp '--exclude=*.rej' '--exclude=*.orig' '--exclude=scripts' '--exclude=.
  		break;
  	default:
  		break;
-@@ -1180,6 +1456,7 @@ static int mhi_pci_get_irqs(struct mhi_c
+@@ -1231,6 +1507,7 @@ static int mhi_pci_get_irqs(struct mhi_c
  
  	mhi_cntrl->irq = irq;
  
@@ -880,7 +939,7 @@ diff -uNrp '--exclude=*.rej' '--exclude=*.orig' '--exclude=scripts' '--exclude=.
  	return 0;
  }
  
-@@ -1253,6 +1530,33 @@ err_try_reset:
+@@ -1304,6 +1581,33 @@ err_try_reset:
  		dev_err(&pdev->dev, "Recovery failed: %d\n", err);
  }
  
@@ -914,7 +973,7 @@ diff -uNrp '--exclude=*.rej' '--exclude=*.orig' '--exclude=scripts' '--exclude=.
  static void health_check(struct timer_list *t)
  {
  	struct mhi_pci_device *mhi_pdev = timer_container_of(mhi_pdev, t,
-@@ -1264,7 +1568,13 @@ static void health_check(struct timer_li
+@@ -1315,7 +1619,13 @@ static void health_check(struct timer_li
  		return;
  
  	if (!mhi_pci_is_alive(mhi_cntrl)) {
@@ -929,7 +988,7 @@ diff -uNrp '--exclude=*.rej' '--exclude=*.orig' '--exclude=scripts' '--exclude=.
  		queue_work(system_long_wq, &mhi_pdev->recovery_work);
  		return;
  	}
-@@ -1324,12 +1634,16 @@ static int mhi_pci_probe(struct pci_dev
+@@ -1375,12 +1685,16 @@ static int mhi_pci_probe(struct pci_dev
  		return -ENOMEM;
  
  	INIT_WORK(&mhi_pdev->recovery_work, mhi_pci_recovery_work);
@@ -944,9 +1003,9 @@ diff -uNrp '--exclude=*.rej' '--exclude=*.orig' '--exclude=scripts' '--exclude=.
 +		mhi_cntrl_config = &mhi_qcom_sdx55_fusion_data_config;
 +
  	/* Initialize health check monitor only for Physical functions */
- 	if (pdev->is_physfn)
+ 	if (!pdev->is_virtfn)
  		timer_setup(&mhi_pdev->health_check_timer, health_check, 0);
-@@ -1359,21 +1673,39 @@ static int mhi_pci_probe(struct pci_dev
+@@ -1410,21 +1724,39 @@ static int mhi_pci_probe(struct pci_dev
  	if (info->edl_trigger)
  		mhi_cntrl->edl_trigger = mhi_pci_generic_edl_trigger;
  
@@ -987,7 +1046,7 @@ diff -uNrp '--exclude=*.rej' '--exclude=*.orig' '--exclude=scripts' '--exclude=.
  
  	/* Have stored pci confspace at hand for restore in sudden PCI error.
  	 * cache the state locally and discard the PCI core one.
-@@ -1384,7 +1716,7 @@ static int mhi_pci_probe(struct pci_dev
+@@ -1435,7 +1767,7 @@ static int mhi_pci_probe(struct pci_dev
  
  	err = mhi_register_controller(mhi_cntrl, mhi_cntrl_config);
  	if (err)
@@ -996,7 +1055,7 @@ diff -uNrp '--exclude=*.rej' '--exclude=*.orig' '--exclude=scripts' '--exclude=.
  
  	/* MHI bus does not power up the controller by default */
  	err = mhi_prepare_for_power_up(mhi_cntrl);
-@@ -1406,7 +1738,7 @@ static int mhi_pci_probe(struct pci_dev
+@@ -1457,7 +1789,7 @@ static int mhi_pci_probe(struct pci_dev
  		mod_timer(&mhi_pdev->health_check_timer, jiffies + HEALTH_CHECK_PERIOD);
  
  	/* Allow runtime suspend only if both PME from D3Hot and M3 are supported */
@@ -1005,7 +1064,7 @@ diff -uNrp '--exclude=*.rej' '--exclude=*.orig' '--exclude=scripts' '--exclude=.
  		pm_runtime_set_autosuspend_delay(&pdev->dev, 2000);
  		pm_runtime_use_autosuspend(&pdev->dev);
  		pm_runtime_mark_last_busy(&pdev->dev);
-@@ -1419,6 +1751,8 @@ err_unprepare:
+@@ -1470,6 +1802,8 @@ err_unprepare:
  	mhi_unprepare_after_power_down(mhi_cntrl);
  err_unregister:
  	mhi_unregister_controller(mhi_cntrl);
@@ -1014,15 +1073,15 @@ diff -uNrp '--exclude=*.rej' '--exclude=*.orig' '--exclude=scripts' '--exclude=.
  
  	return err;
  }
-@@ -1433,6 +1767,7 @@ static void mhi_pci_remove(struct pci_de
- 	if (pdev->is_physfn)
+@@ -1485,6 +1819,7 @@ static void mhi_pci_remove(struct pci_de
+ 	if (!pdev->is_virtfn)
  		timer_delete_sync(&mhi_pdev->health_check_timer);
  	cancel_work_sync(&mhi_pdev->recovery_work);
 +	cancel_work_sync(&mhi_pdev->mission_mode_work);
  
  	if (test_and_clear_bit(MHI_PCI_DEV_STARTED, &mhi_pdev->status)) {
  		mhi_power_down(mhi_cntrl, true);
-@@ -1447,6 +1782,7 @@ static void mhi_pci_remove(struct pci_de
+@@ -1499,6 +1834,7 @@ static void mhi_pci_remove(struct pci_de
  		mhi_soc_reset(mhi_cntrl);
  
  	mhi_unregister_controller(mhi_cntrl);
@@ -1030,7 +1089,7 @@ diff -uNrp '--exclude=*.rej' '--exclude=*.orig' '--exclude=scripts' '--exclude=.
  }
  
  static void mhi_pci_shutdown(struct pci_dev *pdev)
-@@ -1584,7 +1920,8 @@ static int  __maybe_unused mhi_pci_runti
+@@ -1636,7 +1972,8 @@ static int  __maybe_unused mhi_pci_runti
  		goto pci_suspend; /* Nothing to do at MHI level */
  
  	/* Transition to M3 state */
@@ -1040,7 +1099,7 @@ diff -uNrp '--exclude=*.rej' '--exclude=*.orig' '--exclude=scripts' '--exclude=.
  	if (err) {
  		dev_err(&pdev->dev, "failed to suspend device: %d\n", err);
  		clear_bit(MHI_PCI_DEV_SUSPENDED, &mhi_pdev->status);
-@@ -1647,6 +1984,45 @@ err_recovery:
+@@ -1699,6 +2036,45 @@ err_recovery:
  	return 0;
  }
  
@@ -1086,7 +1145,7 @@ diff -uNrp '--exclude=*.rej' '--exclude=*.orig' '--exclude=scripts' '--exclude=.
  static int  __maybe_unused mhi_pci_suspend(struct device *dev)
  {
  	pm_runtime_disable(dev);
-@@ -1707,6 +2083,305 @@ static const struct dev_pm_ops mhi_pci_p
+@@ -1759,6 +2135,305 @@ static const struct dev_pm_ops mhi_pci_p
  #endif
  };
  
@@ -1392,7 +1451,7 @@ diff -uNrp '--exclude=*.rej' '--exclude=*.orig' '--exclude=scripts' '--exclude=.
  static struct pci_driver mhi_pci_driver = {
  	.name		= "mhi-pci-generic",
  	.id_table	= mhi_pci_id_table,
-@@ -1717,7 +2392,37 @@ static struct pci_driver mhi_pci_driver
+@@ -1769,7 +2444,37 @@ static struct pci_driver mhi_pci_driver
  	.driver.pm	= &mhi_pci_pm_ops,
  	.sriov_configure = pci_sriov_configure_simple,
  };
@@ -1431,9 +1490,8 @@ diff -uNrp '--exclude=*.rej' '--exclude=*.orig' '--exclude=scripts' '--exclude=.
  
  MODULE_AUTHOR("Loic Poulain <loic.poulain@linaro.org>");
  MODULE_DESCRIPTION("Modem Host Interface (MHI) PCI controller driver");
-diff -uNrp '--exclude=*.rej' '--exclude=*.orig' '--exclude=scripts' '--exclude=.config*' '--exclude=include/config*' '--exclude=include/generated*' '--exclude=arch/arm64/include/generated*' a/drivers/bus/mhi/host/pm.c b/drivers/bus/mhi/host/pm.c
---- a/drivers/bus/mhi/host/pm.c	2026-03-15 17:54:23.000000000 +0700
-+++ b/drivers/bus/mhi/host/pm.c	2026-10-13 23:12:53.597607799 +0700
+--- a/drivers/bus/mhi/host/pm.c	2026-08-29 13:19:00.000000000 +0000
++++ b/drivers/bus/mhi/host/pm.c	2026-10-14 13:00:00.000000000 +0000
 @@ -167,12 +167,39 @@ static void mhi_toggle_dev_wake(struct m
  }
  
@@ -1579,9 +1637,8 @@ diff -uNrp '--exclude=*.rej' '--exclude=*.orig' '--exclude=scripts' '--exclude=.
  	if (ret)
  		mhi_power_down(mhi_cntrl, false);
  
-diff -uNrp '--exclude=*.rej' '--exclude=*.orig' '--exclude=scripts' '--exclude=.config*' '--exclude=include/config*' '--exclude=include/generated*' '--exclude=arch/arm64/include/generated*' a/drivers/iommu/arm/arm-smmu/arm-smmu.c b/drivers/iommu/arm/arm-smmu/arm-smmu.c
---- a/drivers/iommu/arm/arm-smmu/arm-smmu.c	2026-03-15 17:54:23.000000000 +0700
-+++ b/drivers/iommu/arm/arm-smmu/arm-smmu.c	2026-10-13 21:33:55.286311863 +0700
+--- a/drivers/iommu/arm/arm-smmu/arm-smmu.c	2026-08-29 13:19:00.000000000 +0000
++++ b/drivers/iommu/arm/arm-smmu/arm-smmu.c	2026-10-14 13:00:00.000000000 +0000
 @@ -1624,6 +1624,13 @@ static int arm_smmu_def_domain_type(stru
  	struct arm_smmu_master_cfg *cfg = dev_iommu_priv_get(dev);
  	const struct arm_smmu_impl *impl = cfg->smmu->impl;
@@ -1596,10 +1653,9 @@ diff -uNrp '--exclude=*.rej' '--exclude=*.orig' '--exclude=scripts' '--exclude=.
  	if (using_legacy_binding)
  		return IOMMU_DOMAIN_IDENTITY;
  
-diff -uNrp '--exclude=*.rej' '--exclude=*.orig' '--exclude=scripts' '--exclude=.config*' '--exclude=include/config*' '--exclude=include/generated*' '--exclude=arch/arm64/include/generated*' a/drivers/net/wwan/mhi_wwan_ctrl.c b/drivers/net/wwan/mhi_wwan_ctrl.c
---- a/drivers/net/wwan/mhi_wwan_ctrl.c	2026-03-15 17:54:23.000000000 +0700
-+++ b/drivers/net/wwan/mhi_wwan_ctrl.c	2026-10-13 21:30:08.074408914 +0700
-@@ -13,7 +13,7 @@ enum mhi_wwan_flags {
+--- a/drivers/net/wwan/mhi_wwan_ctrl.c	2026-08-29 13:19:00.000000000 +0000
++++ b/drivers/net/wwan/mhi_wwan_ctrl.c	2026-10-14 13:00:00.000000000 +0000
+@@ -12,7 +12,7 @@ enum mhi_wwan_flags {
  	MHI_WWAN_RX_REFILL,
  };
  
@@ -1631,9 +1687,8 @@ diff -uNrp '--exclude=*.rej' '--exclude=*.orig' '--exclude=scripts' '--exclude=.
  	{},
  };
  MODULE_DEVICE_TABLE(mhi, mhi_wwan_ctrl_match_table);
-diff -uNrp '--exclude=*.rej' '--exclude=*.orig' '--exclude=scripts' '--exclude=.config*' '--exclude=include/config*' '--exclude=include/generated*' '--exclude=arch/arm64/include/generated*' a/drivers/pci/controller/dwc/pcie-qcom.c b/drivers/pci/controller/dwc/pcie-qcom.c
---- a/drivers/pci/controller/dwc/pcie-qcom.c	2026-03-15 17:54:23.000000000 +0700
-+++ b/drivers/pci/controller/dwc/pcie-qcom.c	2026-10-13 22:59:52.128253107 +0700
+--- a/drivers/pci/controller/dwc/pcie-qcom.c	2026-08-29 13:19:00.000000000 +0000
++++ b/drivers/pci/controller/dwc/pcie-qcom.c	2026-10-14 13:00:00.000000000 +0000
 @@ -22,6 +22,7 @@
  #include <linux/init.h>
  #include <linux/of.h>
@@ -1641,8 +1696,8 @@ diff -uNrp '--exclude=*.rej' '--exclude=*.orig' '--exclude=scripts' '--exclude=.
 +#include <linux/of_platform.h>
  #include <linux/pci.h>
  #include <linux/pci-ecam.h>
- #include <linux/pm_opp.h>
-@@ -1761,6 +1762,84 @@ static int qcom_pcie_parse_legacy_bindin
+ #include <linux/pci-pwrctrl.h>
+@@ -1980,6 +1981,84 @@ static int qcom_pcie_parse_legacy_bindin
  	return 0;
  }
  
@@ -1726,8 +1781,8 @@ diff -uNrp '--exclude=*.rej' '--exclude=*.orig' '--exclude=scripts' '--exclude=.
 +
  static int qcom_pcie_probe(struct platform_device *pdev)
  {
- 	const struct qcom_pcie_cfg *pcie_cfg;
-@@ -1934,6 +2013,8 @@ static int qcom_pcie_probe(struct platfo
+ 	struct qcom_pcie_perst *perst, *tmp_perst;
+@@ -2140,6 +2219,8 @@ static int qcom_pcie_probe(struct platfo
  	if (pcie->mhi)
  		qcom_pcie_init_debugfs(pcie);
  
@@ -1736,10 +1791,9 @@ diff -uNrp '--exclude=*.rej' '--exclude=*.orig' '--exclude=scripts' '--exclude=.
  	return 0;
  
  err_phy_exit:
-diff -uNrp '--exclude=*.rej' '--exclude=*.orig' '--exclude=scripts' '--exclude=.config*' '--exclude=include/config*' '--exclude=include/generated*' '--exclude=arch/arm64/include/generated*' a/include/linux/mhi.h b/include/linux/mhi.h
---- a/include/linux/mhi.h	2026-03-15 17:54:23.000000000 +0700
-+++ b/include/linux/mhi.h	2026-10-13 21:29:57.900747919 +0700
-@@ -102,10 +102,12 @@ struct image_info {
+--- a/include/linux/mhi.h	2026-08-29 13:19:00.000000000 +0000
++++ b/include/linux/mhi.h	2026-10-14 13:00:00.000000000 +0000
+@@ -119,10 +119,12 @@ struct image_info {
   * struct mhi_link_info - BW requirement
   * target_link_speed - Link speed as defined by TLS bits in LinkControl reg
   * target_link_width - Link width as defined by NLW bits in LinkStatus reg
@@ -1752,7 +1806,7 @@ diff -uNrp '--exclude=*.rej' '--exclude=*.orig' '--exclude=scripts' '--exclude=.
  };
  
  /**
-@@ -183,10 +185,12 @@ enum mhi_ch_ee_mask {
+@@ -200,10 +202,12 @@ enum mhi_ch_ee_mask {
   * enum mhi_er_data_type - Event ring data types
   * @MHI_ER_DATA: Only client data over this ring
   * @MHI_ER_CTRL: MHI control data and client data
@@ -1765,7 +1819,15 @@ diff -uNrp '--exclude=*.rej' '--exclude=*.orig' '--exclude=scripts' '--exclude=.
  };
  
  /**
-@@ -340,6 +344,8 @@ struct mhi_controller_config {
+@@ -248,6 +252,7 @@ struct mhi_channel_config {
+ 	bool lpm_notify;
+ 	bool offload_channel;
+ 	bool doorbell_mode_switch;
++	bool auto_queue;
+ 	bool wake_capable;
+ };
+ 
+@@ -355,6 +360,8 @@ struct mhi_controller_config {
   * @transition_lock: Lock for protecting MHI state transition list
   * @wlock: Lock for protecting device wakeup
   * @mhi_link_info: Device bandwidth info
@@ -1774,7 +1836,7 @@ diff -uNrp '--exclude=*.rej' '--exclude=*.orig' '--exclude=scripts' '--exclude=.
   * @st_worker: State transition worker
   * @hiprio_wq: High priority workqueue for MHI work such as state transitions
   * @state_event: State change event
-@@ -359,6 +365,10 @@ struct mhi_controller_config {
+@@ -374,6 +381,10 @@ struct mhi_controller_config {
   * @index: Index of the MHI controller instance
   * @bounce_buf: Use of bounce buffer
   * @fbc_download: MHI host needs to do complete image transfer (optional)
@@ -1785,7 +1847,7 @@ diff -uNrp '--exclude=*.rej' '--exclude=*.orig' '--exclude=scripts' '--exclude=.
   * @wake_set: Device wakeup set flag
   * @irq_flags: irq flags passed to request_irq (optional)
   * @mru: the default MRU for the MHI device
-@@ -375,6 +385,7 @@ struct mhi_controller {
+@@ -390,6 +401,7 @@ struct mhi_controller {
  	void __iomem *regs;
  	void __iomem *bhi;
  	void __iomem *bhie;
@@ -1793,7 +1855,7 @@ diff -uNrp '--exclude=*.rej' '--exclude=*.orig' '--exclude=scripts' '--exclude=.
  	void __iomem *wake_db;
  
  	dma_addr_t iova_start;
-@@ -418,12 +429,16 @@ struct mhi_controller {
+@@ -433,12 +445,16 @@ struct mhi_controller {
  	spinlock_t transition_lock;
  	spinlock_t wlock;
  	struct mhi_link_info mhi_link_info;
@@ -1810,7 +1872,7 @@ diff -uNrp '--exclude=*.rej' '--exclude=*.orig' '--exclude=scripts' '--exclude=.
  	void (*wake_get)(struct mhi_controller *mhi_cntrl, bool override);
  	void (*wake_put)(struct mhi_controller *mhi_cntrl, bool override);
  	void (*wake_toggle)(struct mhi_controller *mhi_cntrl);
-@@ -444,6 +459,9 @@ struct mhi_controller {
+@@ -459,6 +475,9 @@ struct mhi_controller {
  	int index;
  	bool bounce_buf;
  	bool fbc_download;
@@ -1820,7 +1882,7 @@ diff -uNrp '--exclude=*.rej' '--exclude=*.orig' '--exclude=scripts' '--exclude=.
  	bool wake_set;
  	unsigned long irq_flags;
  	u32 mru;
-@@ -669,6 +687,12 @@ void mhi_unprepare_after_power_down(stru
+@@ -668,6 +687,12 @@ void mhi_unprepare_after_power_down(stru
  int mhi_pm_suspend(struct mhi_controller *mhi_cntrl);
  
  /**
@@ -1833,3 +1895,11 @@ diff -uNrp '--exclude=*.rej' '--exclude=*.orig' '--exclude=scripts' '--exclude=.
   * mhi_pm_resume - Resume MHI from suspended state
   * @mhi_cntrl: MHI controller
   */
+@@ -741,6 +766,7 @@ void mhi_device_put(struct mhi_device *m
+  * device execution environments match and channels are in a DISABLED state.
+  */
+ int mhi_prepare_for_transfer(struct mhi_device *mhi_dev);
++int mhi_prepare_for_transfer_autoqueue(struct mhi_device *mhi_dev);
+ 
+ /**
+  * mhi_unprepare_from_transfer - Reset UL and DL channels for data transfer.
