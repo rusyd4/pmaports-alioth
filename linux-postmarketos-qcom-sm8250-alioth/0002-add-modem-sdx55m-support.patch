@@ -1609,9 +1609,9 @@ diff -uNrp '--exclude=*.rej' '--exclude=*.orig' '--exclude=scripts' '--exclude=.
  struct mhi_wwan_dev {
  	/* Lower level is a mhi dev, upper level is a wwan port */
 @@ -263,6 +263,22 @@ static const struct mhi_device_id mhi_ww
- 	{ .chan = "QMI", .driver_data = WWAN_PORT_QMI },
  	{ .chan = "DIAG", .driver_data = WWAN_PORT_QCDM },
  	{ .chan = "FIREHOSE", .driver_data = WWAN_PORT_FIREHOSE },
+ 	{ .chan = "NMEA", .driver_data = WWAN_PORT_NMEA },
 +	/* SBL-only channel the SDX55 uses to pull its own images */
 +	{ .chan = "SAHARA", .driver_data = WWAN_PORT_FIREHOSE },
 +	/*

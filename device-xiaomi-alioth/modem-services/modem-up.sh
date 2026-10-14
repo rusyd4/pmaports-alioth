@@ -41,7 +41,7 @@ sleep 1
 log "powering the modem up"
 modprobe mhi_pci_generic sdx_health=0 sdx_rpm=0
 
-for i in $(seq 1 60); do
+for i in $(seq 1 90); do
     [ -e /dev/wwan0qmi0 ] && break
     sleep 2
 done

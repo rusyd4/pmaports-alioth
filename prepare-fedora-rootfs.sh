@@ -33,6 +33,12 @@ if [ -d "${PMB_ROOTFS}/lib/firmware" ]; then
     cp -r "${PMB_ROOTFS}"/lib/firmware/* "${ROOTFS}/usr/lib/firmware/"
 fi
 
+KERNEL_VER=$(ls "${ROOTFS}/usr/lib/modules" 2>/dev/null | head -n 1 || true)
+if [ -n "${KERNEL_VER}" ]; then
+    echo "    Updating module dependencies (depmod) for ${KERNEL_VER}..."
+    depmod -a -b "${ROOTFS}" "${KERNEL_VER}" || true
+fi
+
 echo "==> [2/8] Injecting Audio UCM2 Profiles & Calibrated ALSA State..."
 mkdir -p "${ROOTFS}/usr/share/alsa/ucm2/Xiaomi/alioth"
 mkdir -p "${ROOTFS}/usr/share/alsa/ucm2/conf.d/sm8250"
@@ -64,14 +70,14 @@ cp "${REPO_DIR}/device-xiaomi-alioth/wifi-powersave.conf" "${ROOTFS}/etc/Network
 cp "${REPO_DIR}/device-xiaomi-alioth/81-libssc-xiaomi-alioth.rules" "${ROOTFS}/usr/lib/udev/rules.d/"
 
 echo "==> [5/8] Setting up SDX55 Modem Daemons & Services..."
-mkdir -p "${ROOTFS}/usr/local/bin" "${ROOTFS}/usr/local/lib/tqftpserv" "${ROOTFS}/etc/systemd/system/multi-user.target.wants" "${ROOTFS}/etc/udev/rules.d"
+mkdir -p "${ROOTFS}/usr/local/bin" "${ROOTFS}/etc/systemd/system/multi-user.target.wants" "${ROOTFS}/etc/udev/rules.d" "${ROOTFS}/etc/modules-load.d"
 cp "${REPO_DIR}/device-xiaomi-alioth/modem-services/"*.py "${ROOTFS}/usr/local/bin/"
 cp "${REPO_DIR}/device-xiaomi-alioth/modem-services/"*.sh "${ROOTFS}/usr/local/bin/"
 cp "${REPO_DIR}/device-xiaomi-alioth/modem-services/alioth-sim-provision" "${ROOTFS}/usr/local/bin/"
 cp "${REPO_DIR}/device-xiaomi-alioth/modem-services/tqftpserv" "${ROOTFS}/usr/local/bin/"
-cp "${REPO_DIR}/device-xiaomi-alioth/modem-services/"*.so* "${ROOTFS}/usr/local/lib/tqftpserv/"
 chmod +x "${ROOTFS}/usr/local/bin/"*
 
+cp "${REPO_DIR}/device-xiaomi-alioth/modem-services/modem-modules.conf" "${ROOTFS}/etc/modules-load.d/modem.conf"
 cp "${REPO_DIR}/device-xiaomi-alioth/modem-services/alioth-modem-firmware.service" "${ROOTFS}/etc/systemd/system/"
 cp "${REPO_DIR}/device-xiaomi-alioth/modem-services/alioth-modem.service" "${ROOTFS}/etc/systemd/system/"
 cp "${REPO_DIR}/device-xiaomi-alioth/modem-services/tqftpserv.service" "${ROOTFS}/etc/systemd/system/"
@@ -112,12 +118,10 @@ EOF_SSHD
 mkdir -p "${ROOTFS}/etc/systemd/system/multi-user.target.wants"
 mkdir -p "${ROOTFS}/etc/systemd/system/sockets.target.wants"
 ln -sf /usr/lib/systemd/system/sshd.service "${ROOTFS}/etc/systemd/system/multi-user.target.wants/sshd.service"
-ln -sf /usr/lib/systemd/system/sshd.socket "${ROOTFS}/etc/systemd/system/sockets.target.wants/sshd.socket"
 
 mkdir -p "${ROOTFS}/etc/systemd/system-preset"
 cat << 'EOF_PRESET' > "${ROOTFS}/etc/systemd/system-preset/00-alioth.preset"
 enable sshd.service
-enable sshd.socket
 enable alioth-modem.service
 enable tqftpserv.service
 enable alioth-modem-firmware.service
@@ -129,4 +133,12 @@ ln -sf /dev/null "${ROOTFS}/etc/systemd/system/firewalld.service"
 echo "==> [7/8] Patching /etc/fstab..."
 sed -i '/\/boot/s/^/#/' "${ROOTFS}/etc/fstab"
 
-echo "==> [7/7] Pre-boot configuration complete for ${ROOTFS}!"
+echo "==> [8/8] Blocking Fedora kernel packages in DNF..."
+mkdir -p "${ROOTFS}/etc/dnf"
+if [ -f "${ROOTFS}/etc/dnf/dnf.conf" ]; then
+    grep -q "excludepkgs=.*kernel" "${ROOTFS}/etc/dnf/dnf.conf" || echo "excludepkgs=kernel*" >> "${ROOTFS}/etc/dnf/dnf.conf"
+else
+    printf "[main]\nexcludepkgs=kernel*\n" > "${ROOTFS}/etc/dnf/dnf.conf"
+fi
+
+echo "==> Configuration complete for ${ROOTFS}!"

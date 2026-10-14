@@ -480,7 +480,7 @@ index 000000000000..4652c6241f38
 +
 +// SD870 additional cpu frequency
 +&cpu7_opp_table {
-+	cpu7_opp21: opp-3187200000 {
++	cpu7_opp22: opp-3187200000 {
 +		opp-hz = /bits/ 64 <3187200000>;
 +		opp-peak-kBps = <8368000 51609600>;
 +	};

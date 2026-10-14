@@ -1,7 +1,8 @@
 [Unit]
 Description=Bring up the SDX55 modem
-After=local-fs.target tqftpserv.service
-Wants=tqftpserv.service
+After=local-fs.target tqftpserv.service alioth-modem-firmware.service
+Wants=tqftpserv.service alioth-modem-firmware.service
+Requires=alioth-modem-firmware.service
 
 [Service]
 Type=oneshot
