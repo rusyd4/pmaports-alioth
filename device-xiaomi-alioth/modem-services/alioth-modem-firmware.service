@@ -1,0 +1,12 @@
+[Unit]
+Description=Copy the SDX55 firmware and NV out of the phone's own partitions
+Before=alioth-modem.service
+ConditionPathExists=!/lib/firmware/qcom/sdx55m/efs3_real.bin
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/local/bin/alioth-modem-firmware.sh
+
+[Install]
+WantedBy=multi-user.target
