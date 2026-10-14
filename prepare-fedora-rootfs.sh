@@ -55,21 +55,22 @@ cp "${REPO_DIR}/device-xiaomi-alioth/wifi-powersave.conf" "${ROOTFS}/etc/Network
 cp "${REPO_DIR}/device-xiaomi-alioth/81-libssc-xiaomi-alioth.rules" "${ROOTFS}/usr/lib/udev/rules.d/"
 
 echo "==> [5/8] Setting up SDX55 Modem Daemons & Services..."
-mkdir -p "${ROOTFS}/usr/local/bin" "${ROOTFS}/etc/systemd/system/multi-user.target.wants" "${ROOTFS}/etc/udev/rules.d"
-cp "${REPO_DIR}/device-xiaomi-alioth/modem-services/sahara_srv.py" "${ROOTFS}/usr/local/bin/"
-cp "${REPO_DIR}/device-xiaomi-alioth/modem-services/efs_srv.py" "${ROOTFS}/usr/local/bin/"
-cp "${REPO_DIR}/device-xiaomi-alioth/modem-services/data_up.py" "${ROOTFS}/usr/local/bin/"
-cp "${REPO_DIR}/device-xiaomi-alioth/modem-services/diagprobe.py" "${ROOTFS}/usr/local/bin/"
-cp "${REPO_DIR}/device-xiaomi-alioth/modem-services/modem-up.sh" "${ROOTFS}/usr/local/bin/"
+mkdir -p "${ROOTFS}/usr/local/bin" "${ROOTFS}/usr/local/lib/tqftpserv" "${ROOTFS}/etc/systemd/system/multi-user.target.wants" "${ROOTFS}/etc/udev/rules.d"
+cp "${REPO_DIR}/device-xiaomi-alioth/modem-services/"*.py "${ROOTFS}/usr/local/bin/"
+cp "${REPO_DIR}/device-xiaomi-alioth/modem-services/"*.sh "${ROOTFS}/usr/local/bin/"
 cp "${REPO_DIR}/device-xiaomi-alioth/modem-services/alioth-sim-provision" "${ROOTFS}/usr/local/bin/"
-chmod +x "${ROOTFS}/usr/local/bin/"*.py "${ROOTFS}/usr/local/bin/"*.sh "${ROOTFS}/usr/local/bin/alioth-sim-provision"
+cp "${REPO_DIR}/device-xiaomi-alioth/modem-services/tqftpserv" "${ROOTFS}/usr/local/bin/"
+cp "${REPO_DIR}/device-xiaomi-alioth/modem-services/"*.so* "${ROOTFS}/usr/local/lib/tqftpserv/"
+chmod +x "${ROOTFS}/usr/local/bin/"*
 
+cp "${REPO_DIR}/device-xiaomi-alioth/modem-services/alioth-modem-firmware.service" "${ROOTFS}/etc/systemd/system/"
 cp "${REPO_DIR}/device-xiaomi-alioth/modem-services/alioth-modem.service" "${ROOTFS}/etc/systemd/system/"
 cp "${REPO_DIR}/device-xiaomi-alioth/modem-services/tqftpserv.service" "${ROOTFS}/etc/systemd/system/"
 cp "${REPO_DIR}/device-xiaomi-alioth/modem-services/77-mm-ignore-sdx55-extra.rules" "${ROOTFS}/etc/udev/rules.d/"
 
-ln -sf /etc/systemd/system/alioth-modem.service "${ROOTFS}/etc/systemd/system/multi-user.target.wants/alioth-modem.service"
-ln -sf /etc/systemd/system/tqftpserv.service "${ROOTFS}/etc/systemd/system/multi-user.target.wants/tqftpserv.service"
+ln -sf ../alioth-modem-firmware.service "${ROOTFS}/etc/systemd/system/multi-user.target.wants/alioth-modem-firmware.service"
+ln -sf ../tqftpserv.service "${ROOTFS}/etc/systemd/system/multi-user.target.wants/tqftpserv.service"
+ln -sf ../alioth-modem.service "${ROOTFS}/etc/systemd/system/multi-user.target.wants/alioth-modem.service"
 
 mkdir -p "${ROOTFS}/usr/share/alioth-modem"
 ln -sf /usr/local/bin/sahara_srv.py "${ROOTFS}/usr/share/alioth-modem/sahara_srv.py"

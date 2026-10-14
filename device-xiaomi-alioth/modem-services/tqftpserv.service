@@ -5,7 +5,7 @@ Wants=local-fs.target
 
 [Service]
 Type=simple
-ExecStart=/usr/local/bin/tqftpserv -d
+ExecStart=/usr/local/bin/tqftpserv-run.sh
 Restart=always
 RestartSec=1
 StandardOutput=journal
