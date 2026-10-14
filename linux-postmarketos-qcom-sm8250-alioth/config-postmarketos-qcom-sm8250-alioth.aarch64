@@ -2664,7 +2664,7 @@ CONFIG_VETH=m
 # CONFIG_NLMON is not set
 # CONFIG_NETKIT is not set
 # CONFIG_NET_VRF is not set
-# CONFIG_MHI_NET is not set
+CONFIG_MHI_NET=m
 # CONFIG_ARCNET is not set
 
 #
@@ -2694,7 +2694,9 @@ CONFIG_VETH=m
 # CONFIG_NET_DSA_YT921X is not set
 # end of Distributed Switch Architecture drivers
 
-# CONFIG_ETHERNET is not set
+CONFIG_ETHERNET=y
+CONFIG_NET_VENDOR_QUALCOMM=y
+CONFIG_RMNET=m
 # CONFIG_FDDI is not set
 # CONFIG_HIPPI is not set
 CONFIG_QCOM_IPA=m
@@ -2938,7 +2940,13 @@ CONFIG_WLAN_VENDOR_SILABS=y
 #
 # Wireless WAN
 #
-# CONFIG_WWAN is not set
+CONFIG_WWAN=y
+CONFIG_WWAN_DEBUGFS=y
+# CONFIG_WWAN_HWSIM is not set
+CONFIG_MHI_WWAN_CTRL=m
+CONFIG_MHI_WWAN_MBIM=m
+CONFIG_QCOM_BAM_DMUX=m
+CONFIG_RPMSG_WWAN_CTRL=m
 # end of Wireless WAN
 
 # CONFIG_VMXNET3 is not set

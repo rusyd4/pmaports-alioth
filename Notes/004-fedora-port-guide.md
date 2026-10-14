@@ -126,14 +126,60 @@ The Cirrus Logic `cs35l41` hardware amplifier defaults to low analog/digital gai
 * Save the mixer state: `sudo alsactl store`.
 * Alternatively, enable **"Raise maximum volume / Allow volume over 100%"** in KDE Sound Settings.
 
-### Bluetooth Keyboard Pairing
-* `hidp` and `uhid` drivers handle Bluetooth keyboards.
-* If a keyboard requests PIN / Passkey confirmation and the GUI dialog does not pop up, run `bluetoothctl`:
-  ```sh
-  bluetoothctl
-  default-agent
-  pair <MAC_ADDRESS>
-  # Type passkey on the keyboard and press Enter if prompted
-  trust <MAC_ADDRESS>
-  connect <MAC_ADDRESS>
-  ```
+## 7. 5G/LTE Cellular Modem (Qualcomm SDX55) Bring-Up
+
+The Snapdragon 870 SoC has no integrated modem; the Xiaomi Poco F3 (`alioth`) connects to a standalone Qualcomm SDX55 chip over PCIe (`pcie2`). The modem is flashless (it contains no onboard storage and pulls all firmware and NV from the host UFS partitions).
+
+### A. Kernel Requirements
+The kernel must be built with `0002-add-modem-sdx55m-support.patch` and the following configuration options enabled:
+```kconfig
+CONFIG_MHI_BUS=m
+CONFIG_MHI_BUS_PCI_GENERIC=m
+CONFIG_MHI_NET=m
+CONFIG_MHI_WWAN_CTRL=m
+CONFIG_MHI_WWAN_MBIM=m
+CONFIG_ETHERNET=y
+CONFIG_NET_VENDOR_QUALCOMM=y
+CONFIG_RMNET=m
+CONFIG_QRTR=m
+CONFIG_QRTR_SMD=m
+CONFIG_QRTR_MHI=m
+```
+
+### B. Userspace Firmware & Tooling
+1. **Firmware Extraction** (from phone's internal partitions):
+   - Firmware binaries: copy from Android `/vendor/firmware_mnt/image/sdx55m/*` to `/lib/firmware/qcom/sdx55m/`.
+   - Carrier configuration files: copy `/image/modem_pr` to `/lib/firmware/qcom/sm8250/xiaomi/alioth/modem_pr`.
+   - Real NV/IMEI partitions (do not use stock placeholder `efs*.bin`):
+     ```sh
+     dd if=/dev/disk/by-partlabel/mdm1m9kefs1 of=/lib/firmware/qcom/sdx55m/efs1_real.bin bs=1M
+     dd if=/dev/disk/by-partlabel/mdm1m9kefs2 of=/lib/firmware/qcom/sdx55m/efs2_real.bin bs=1M
+     dd if=/dev/disk/by-partlabel/mdm1m9kefs3 of=/lib/firmware/qcom/sdx55m/efs3_real.bin bs=1M
+     ```
+
+2. **Required Services**:
+   - `tqftpserv`: Qualcomm TFTP server published on QRTR instance 3 (`tqftpserv -d`).
+   - `sahara_srv.py`: Python Sahara image server serving boot binaries on `/dev/wwan0firehose0`.
+   - `efs_srv.py`: Remote file system server serving NV partitions on `/dev/wwan0xmmrpc0`.
+   - `data_up.py` / `modem-up.sh`: Service script that brings up the radio, binds the WDS QMI client, configures raw-ip QMAP on `rmnet0`, and sets up DNS routing via `resolvectl`.
+
+### C. Disabling SIM PIN Protection
+If your SIM card is locked with a PIN:
+```sh
+# Verify PIN1 (example PIN 0852 on slot 1):
+qmicli -d qrtr://3 --uim-verify-pin="PIN1,0852,session-type=card-slot-1"
+
+# Disable PIN protection permanently:
+qmicli -d qrtr://3 --uim-set-pin-protection="PIN1,disable,0852,session-type=card-slot-1"
+```
+
+---
+
+## 8. Credits & Acknowledgments
+
+- **[cancelledbit/alioth-modem](https://github.com/cancelledbit/alioth-modem)**:
+  Groundbreaking research and complete implementation of the SDX55 bring-up on mainline Linux for Poco F3 / Redmi K40 (`alioth`). Provided the reference patches for ESOC PMIC reset (`pmx55`), TLMM handshake lines, MHI bandwidth scaling (`bw_scale`), EFS remote filesystem server architecture, and QRTR/TFTP instance mapping.
+- **postmarketOS Community & SoC SM8250 Mainlining Team**:
+  Device tree foundation, initial display panel, touchscreen drivers, and audio UCM profiles for the Snapdragon 865/870 platform.
+- **Linux MSM / Qualcomm Innovation Center (QuIC)**:
+  Upstream MHI bus subsystem, QRTR router, and RmNet MAP drivers.

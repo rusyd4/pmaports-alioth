@@ -5,7 +5,7 @@
 _flavor="postmarketos-qcom-sm8250-alioth"
 pkgname=linux-$_flavor
 pkgver=6.19.6
-pkgrel=1
+pkgrel=60
 pkgdesc="Mainline kernel fork for SM8250"
 arch="aarch64"
 _carch="arm64"
@@ -45,6 +45,7 @@ source="
     config-$_flavor.$arch
 
     0001-Added-POCO-F3-dts-panel-and-touchscreen-drivers.patch
+    0002-add-modem-sdx55m-support.patch
 "
 builddir="$srcdir/linux-$pkgver"
 
@@ -77,6 +78,7 @@ package() {
 
 sha512sums="
 bb1570cb95f365410402707e36451b35c513d1d9268921d31ce80899df2dbeeffc60109687403208fec34e559ce37ee4a540d3e32ce267a0338e7c198d034f35  linux-6.19.6.tar.gz
-3597f2aed94eac23571b797409390af304f3e8d80021dc4117c3aeae0042af9bff305c4f0124c07c2a4bc26a8a41c8bfe1a8eab02aaf2de8834c9a0e8c735967  config-postmarketos-qcom-sm8250-alioth.aarch64
+9af21cee2517db596068a5717441f8d471b911a553fa835cff62b37f18e1ab96fc739952c42173484900ce9a1a24d672735ec919179629a018560daefa0f86a6  config-postmarketos-qcom-sm8250-alioth.aarch64
 3155103c7c498ae0d3e00117cefd7364e8b8100aa9cad2967086904d77e2aab16063b60a2d4603b29190c2aa96ac7dc81e9ceda01dadada1f109573897d74ac4  0001-Added-POCO-F3-dts-panel-and-touchscreen-drivers.patch
+50c92cee9dc9df96b6c1cfb32bd23d8637f7a2f15b72f99898bbd0e6ed873b794e8822d5f0ab807f70367a74c5cdb75a6e13b6944da69b01a0eb7d1370f1d869  0002-add-modem-sdx55m-support.patch
 "
