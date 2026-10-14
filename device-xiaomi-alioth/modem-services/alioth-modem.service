@@ -1,0 +1,13 @@
+[Unit]
+Description=Bring up the SDX55 modem
+After=local-fs.target tqftpserv.service
+Wants=tqftpserv.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/local/bin/modem-up.sh
+TimeoutStartSec=300
+
+[Install]
+WantedBy=multi-user.target

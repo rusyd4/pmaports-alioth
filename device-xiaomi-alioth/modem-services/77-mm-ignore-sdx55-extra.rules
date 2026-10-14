@@ -1,0 +1,8 @@
+ACTION!="remove", SUBSYSTEM=="wwan", ATTR{type}=="XMMRPC", ENV{ID_MM_DEVICE_IGNORE}="1"
+KERNEL=="wwan*xmmrpc*", ENV{ID_MM_DEVICE_IGNORE}="1"
+ACTION!="remove", SUBSYSTEM=="wwan", ATTR{type}=="FIREHOSE", ENV{ID_MM_DEVICE_IGNORE}="1"
+KERNEL=="wwan*firehose*", ENV{ID_MM_DEVICE_IGNORE}="1"
+ACTION!="remove", SUBSYSTEM=="wwan", ATTR{type}=="SAHARA", ENV{ID_MM_DEVICE_IGNORE}="1"
+KERNEL=="wwan*sahara*", ENV{ID_MM_DEVICE_IGNORE}="1"
+ACTION!="remove", SUBSYSTEM=="wwan", ATTR{type}=="BL", ENV{ID_MM_DEVICE_IGNORE}="1"
+KERNEL=="wwan*bl*", ENV{ID_MM_DEVICE_IGNORE}="1"

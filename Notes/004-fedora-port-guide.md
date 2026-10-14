@@ -16,19 +16,37 @@ sudo pacman -S android-tools btrfs-progs
 
 ## 2. Kernel Compilation (pmbootstrap)
 
-Mainline drivers for the display panel, SPI bus, and touchscreen must be compiled as built-ins (`=y`):
+Mainline drivers for the display panel, SPI bus, and touchscreen must be compiled as built-ins (`=y`). Drivers for the SDX55 modem (MHI, WWAN, RmNet, QRTR) must be enabled as modules (`=m`) or built-ins (`=y`):
 
 1. **Kernel configuration** (`linux-postmarketos-qcom-sm8250-alioth/config-postmarketos-qcom-sm8250-alioth.aarch64`):
    ```kconfig
    CONFIG_SPI_QCOM_GENI=y
    CONFIG_TOUCHSCREEN_FT8756=y
    CONFIG_DRM_PANEL_SAMSUNG_AMS667XX01=y
+   CONFIG_MHI_BUS=m
+   CONFIG_MHI_BUS_PCI_GENERIC=m
+   CONFIG_MHI_NET=m
+   CONFIG_MHI_WWAN_CTRL=m
+   CONFIG_MHI_WWAN_MBIM=m
+   CONFIG_ETHERNET=y
+   CONFIG_NET_VENDOR_QUALCOMM=y
+   CONFIG_RMNET=m
+   CONFIG_QRTR=m
+   CONFIG_QRTR_SMD=m
+   CONFIG_QRTR_MHI=m
    ```
 
-2. **Build kernel packages**:
+2. **Sync and checksum kernel package**:
+   ```sh
+   ./update_folder.sh
+   pmbootstrap checksum linux-postmarketos-qcom-sm8250-alioth
+   ./store_folder_in_repo.sh
+   ```
+
+3. **Build packages**:
    ```sh
    pmbootstrap build firmware-xiaomi-alioth
-   pmbootstrap build linux-postmarketos-qcom-sm8250-alioth
+   pmbootstrap build --lax linux-postmarketos-qcom-sm8250-alioth
    pmbootstrap build device-xiaomi-alioth
    ```
 
@@ -51,12 +69,6 @@ Mainline drivers for the display panel, SPI bus, and touchscreen must be compile
    ```
 
 3. **Convert to Android Sparse image**:
-   ```sh
-   sudo sync
-   sudo umount /mnt/fedora
-   sudo img2simg /dev/loop0p3 ~/fedora-rootfs.simg
-   sudo losetup -d /dev/loop0
-   ```
    ```sh
    sudo sync
    sudo umount /mnt/fedora
