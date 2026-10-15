@@ -55,9 +55,9 @@ fastboot reboot
 ## Option B: Single Boot Fedora ARM64
 
 ### 1. Download Prebuilt Images (Recommended)
-Download the prebuilt release assets from **[GitHub Releases](https://github.com/rusyd4/pmaports-alioth/releases)**:
-* **`boot_fedora.img`**: Prebuilt boot image configured for single boot on the `userdata` partition (`pmos_root=/dev/disk/by-partlabel/userdata`).
-* **`fedora-rootfs.simg`**: Prebuilt Fedora KDE Mobile rootfs sparse image with injected kernel modules, firmware, UCM2 audio profiles, cellular services, and `qbootctl`.
+Download the prebuilt release assets from Google Drive or **[GitHub Releases](https://github.com/rusyd4/pmaports-alioth/releases)**:
+* [**`boot_fedora.img`**](https://drive.google.com/file/d/1o0CHJ_t2dDaJBsw4z18Q8LJnaVj3Tcyg/view?usp=sharing): Prebuilt boot image configured for single boot on the `userdata` partition (`pmos_root=/dev/disk/by-partlabel/userdata`).
+* [**`fedora-rootfs.simg`**](https://drive.google.com/file/d/1sO2Ap_LXBtzJUo7GjTCbCY0Mi19DqjCf/view?usp=sharing): Prebuilt Fedora KDE Mobile rootfs sparse image with injected kernel modules, firmware, UCM2 audio profiles, cellular services, and `qbootctl`.
 
 ### 2. Flash via Fastboot
 Reboot your phone into Fastboot mode (Power + Volume Down) and flash:
@@ -118,7 +118,7 @@ To run Android (AOSP) alongside Fedora Linux:
 - The 242 GB `userdata` partition is split into two 121 GB partitions (`userdata` and `linux`) using prebuilt `tools/parted`.
 - Slot A is reserved for Android AOSP.
 - Slot B is reserved for Fedora Linux.
-- Prebuilt **`boot_linux.img`** (boot image for the dedicated `linux` partition) and **`fedora-rootfs.simg`** are provided in **[GitHub Releases](https://github.com/rusyd4/pmaports-alioth/releases)**.
+- Prebuilt [**`boot_linux.img`**](https://drive.google.com/file/d/1fjLjzjRp42_BfnwK15h1JfelPD1H3jbA/view?usp=sharing) (boot image for the dedicated `linux` partition) and [**`fedora-rootfs.simg`**](https://drive.google.com/file/d/1sO2Ap_LXBtzJUo7GjTCbCY0Mi19DqjCf/view?usp=sharing) are provided on Google Drive and **[GitHub Releases](https://github.com/rusyd4/pmaports-alioth/releases)**.
 
 👉 **Follow the full guide in [Dual Boot Guide](dualboot.md).**
 

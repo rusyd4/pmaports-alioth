@@ -152,7 +152,7 @@ su
 bootctl set-active-boot-slot 1
 reboot
 ```
-*(Slot 0 = A, Slot 1 = B)*, or install the **BootControl** app from F-Droid.
+*(Slot 0 = A, Slot 1 = B)*, or install the [**BootControl**](https://github.com/capntrips/BootControl/releases/download/v1.0.0-alpha03/BootControl-v1.0.0-alpha03.apk) app.
 
 ### Option C: Switching from inside Fedora
 In a terminal:

@@ -85,9 +85,9 @@ On 256GB Poco F3 devices, `/dev/block/sda` has `userdata` as partition **35** (s
 ## 4. Step 3: Install Fedora on Slot B
 
 ### 1. Download Prebuilt Dual Boot Images (Recommended)
-Download release assets from **[GitHub Releases](https://github.com/rusyd4/pmaports-alioth/releases)**:
-* **`boot_linux.img`**: Prebuilt boot image configured with rootfs cmdline for the dedicated `linux` partition (`pmos_root=/dev/disk/by-partlabel/linux`).
-* **`fedora-rootfs.simg`**: Prebuilt Fedora KDE Mobile rootfs sparse image.
+Download release assets from Google Drive or **[GitHub Releases](https://github.com/rusyd4/pmaports-alioth/releases)**:
+* [**`boot_linux.img`**](https://drive.google.com/file/d/1fjLjzjRp42_BfnwK15h1JfelPD1H3jbA/view?usp=sharing): Prebuilt boot image configured with rootfs cmdline for the dedicated `linux` partition (`pmos_root=/dev/disk/by-partlabel/linux`).
+* [**`fedora-rootfs.simg`**](https://drive.google.com/file/d/1sO2Ap_LXBtzJUo7GjTCbCY0Mi19DqjCf/view?usp=sharing): Prebuilt Fedora KDE Mobile rootfs sparse image.
 
 ### 2. Flash via Fastboot
 1. Reboot phone to Fastboot mode (Power + Volume Down).
@@ -147,7 +147,7 @@ su
 bootctl set-active-boot-slot 1
 reboot
 ```
-*(Slot 0 = A / Android, Slot 1 = B / Fedora)*, or install the **BootControl** app from F-Droid.
+*(Slot 0 = A / Android, Slot 1 = B / Fedora)*, or install the [**BootControl**](https://github.com/capntrips/BootControl/releases/download/v1.0.0-alpha03/BootControl-v1.0.0-alpha03.apk) app.
 
 ### Option C: Switching from inside Fedora
 In a terminal:

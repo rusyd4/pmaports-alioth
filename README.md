@@ -42,10 +42,13 @@ Mainline Linux kernel, postmarketOS packages, and Fedora ARM64 (KDE Plasma Mobil
 
 ## Releases & Prebuilt Images
 
-Prebuilt images are available on **[GitHub Releases](https://github.com/rusyd4/pmaports-alioth/releases)**:
-* **`boot_fedora.img`**: Boot image for single boot Fedora on the `userdata` partition.
-* **`boot_linux.img`**: Boot image for dual boot Fedora on the dedicated `linux` partition.
-* **`fedora-rootfs.simg`**: Prebuilt Fedora KDE Mobile rootfs sparse image with injected kernel modules, firmware, UCM2 audio profiles, cellular services, and `qbootctl`.
+Prebuilt images and download links:
+* [**`boot_fedora.img`**](https://drive.google.com/file/d/1o0CHJ_t2dDaJBsw4z18Q8LJnaVj3Tcyg/view?usp=sharing): Boot image for single boot Fedora on the `userdata` partition.
+* [**`boot_linux.img`**](https://drive.google.com/file/d/1fjLjzjRp42_BfnwK15h1JfelPD1H3jbA/view?usp=sharing): Boot image for dual boot Fedora on the dedicated `linux` partition.
+* [**`fedora-rootfs.simg`**](https://drive.google.com/file/d/1sO2Ap_LXBtzJUo7GjTCbCY0Mi19DqjCf/view?usp=sharing): Prebuilt Fedora KDE Mobile rootfs sparse image with injected kernel modules, firmware, UCM2 audio profiles, cellular services, and `qbootctl`.
+* [**`BootControl` APK**](https://github.com/capntrips/BootControl/releases/download/v1.0.0-alpha03/BootControl-v1.0.0-alpha03.apk): Android application to switch A/B slots directly from Android.
+
+Also available on **[GitHub Releases](https://github.com/rusyd4/pmaports-alioth/releases)**.
 
 ---
 
