@@ -30,11 +30,16 @@ pmaports-alioth/
 ├── firmware-xiaomi-alioth/            # Non-free firmware package
 │   ├── APKBUILD                      # Firmware extraction & packaging
 │   └── *.files                       # Lists of firmware files for initramfs & sensors
-├── Notes/                            # Technical notes, dmesg dumps, UART logs, guides
+├── docs/                             # Structured documentation
+│   ├── user/                         # End-user guides (installation, dualboot, config)
+│   └── dev/                          # Developer technical docs (kernel, modem, uart, dts)
+├── tools/                            # Prebuilt binaries (ARM64 parted bundle, static qbootctl)
+├── Notes/                            # Raw logs (dmesgs, dts, uart_logs, fastboot dump)
 ├── prepare-fedora-rootfs.sh          # Pre-boot Fedora rootfs provisioner (modules, firmware, UCM)
+├── build-fedora-rootfs.sh            # Fedora sparse image builder automation
 ├── update_folder.sh                  # Sync repo packages -> pmbootstrap local cache
 ├── store_folder_in_repo.sh           # Sync pmbootstrap local cache -> repo
-└── README.md                         # Port status and initial installation guide
+└── README.md                         # Port status and documentation portal
 ```
 
 ---
