@@ -126,14 +126,18 @@ Untuk memotong ketergantungan pada ModemManager yang belum di-patch:
 ## 4. Temuan Investigasi Wi-Fi (QCA6390)
 
 ### 4.1 Penyebab Wi-Fi Tidak Muncul / Mati
-- **Gejala**: Antarmuka `wlp1s0` tidak terbentuk di `ip link`, chip `17cb:1101` tidak muncul di `lspci`, dan `1c00000.pcie` berstatus `cannot initialize host` di `/sys/kernel/debug/devices_deferred`.
+- **Gejala**: Antarmuka `wlp1s0` tidak terbentuk di `ip link`, chip `17cb:1101` tidak muncul di `lspci`, atau chip terdeteksi di PCIe namun mac80211 / `wlp1s0` tidak pernah selesai diinisialisasi (`qca6390 hw2.0` terdeteksi namun interface tidak up).
 - **Akar Masalah**:
   1. **Mismatch Versi Kernel & Modul**: Ponsel melakukan boot menggunakan kernel baru **7.2.0**, sedangkan folder sistem `/lib/modules/` hanya berisi modul versi lama **6.19.6-pipa**. Modul `7.2.0` belum ada di rootfs.
-  2. **Kegagalan Power Sequencer**: Pada kernel 7.2.0, chip Wi-Fi QCA6390 dikendalikan oleh modul power sequencing `pwrseq-qcom-wcn.ko` (sebelumnya `pwrseq_qcom_wcn`). Tanpa modul ini di `/lib/modules/7.2.0/`, chip tidak mendapat power rail dari PMIC, link PCIe0 tidak up, dan driver `ath11k_pci` tidak dapat mengenali hardware.
+  2. **Kegagalan Power Sequencer**: Pada kernel 7.2.0, chip Wi-Fi QCA6390 dikendalikan oleh modul power sequencing `pwrseq-qcom-wcn.ko`. Tanpa modul ini di `/lib/modules/7.2.0/`, chip tidak mendapat power rail dari PMIC, link PCIe0 tidak up, dan driver `ath11k_pci` tidak dapat mengenali hardware.
+  3. **Konflik State Transition MHI Core (SDX55 vs QCA6390)**:
+     - Patch in-kernel `0002-add-modem-sdx55m-support.patch` menambahkan transisi manual paksa `DEV_ST_TRANSITION_MISSION_MODE` dan timeout bypass SBL pada event interrupt/ready state.
+     - Patch tersebut semula bersifat global dan tidak memfilter pengontrol MHI. Akibatnya, chip Wi-Fi QCA6390 (yang juga memakai bus MHI via `mhi1`) dipaksa masuk ke Mission Mode sebelum firmware selesai mengunduh BDF/kalibrasi melalui QRTR MHI channel 20/21, memicu drop paket control socket QRTR dan membuat inisialisasi mac80211 mandek.
 - **Solusi**:
   - Seluruh modul kernel `/lib/modules/7.2.0/` diekstrak dari paket APK dan disinkronkan ke rootfs.
   - Perintah `depmod -a 7.2.0` dijalankan untuk memperbarui dependensi modul.
-  - Modul `pwrseq-qcom-wcn` dan `pci-pwrctrl-pwrseq` berhasil dimuat, dan chip QCA6390 (`17cb:1101`) kembali terdeteksi normal di PCIe.
+  - Patch `0002-add-modem-sdx55m-support.patch` diperbaiki agar logika bypass SBL & transisi paksa hanya berjalan pada perangkat yang memiliki flag `wait_for_sbl` (khusus modem flashless SDX55), dan mengabaikan transisi ganda jika pengontrol sudah berada di Mission Mode.
+  - Hasil: Antarmuka `wlp1s0` otomatis terbentuk saat boot, scan jaringan (`nmcli dev wifi list`) mendeteksi seluruh SSID 2.4 GHz dan 5 GHz, sementara modem SDX55 (`rmnet0`) tetap berjalan normal bersamaan.
 
 ---
 

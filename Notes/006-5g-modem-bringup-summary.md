@@ -408,7 +408,7 @@ Untuk mendukung operasi berkelanjutan loader modem dan menjaga channel descripto
 
 - **Wi-Fi (`wlp1s0`)**: Berfungsi normal 100% online via `ath11k_pci`.
 - **PCIe Endpoint**: `0002:01:00.0 SDX55` stabil pada PCIe Gen3 x2 (8 GT/s x2), ASPM nonaktif.
-- **Kernel Aktif**: `Linux fedora 6.19.6-pipa #53-postmarketos-qcom-sm8250-alioth` (Package `linux-postmarketos-qcom-sm8250-alioth-6.19.6-r52`, patch r53 siap saji).
+- **Kernel Aktif**: `Linux fedora 7.2.0 #4-postmarketos-qcom-sm8250-alioth` (Package `linux-postmarketos-qcom-sm8250-alioth-7.2.0-r3`).
 - **ARM-SMMU Identity Domain**: Perangkat `17cb:0306` (SDX55) diisolasi menggunakan `IOMMU_DOMAIN_IDENTITY` di `arm-smmu.c`. Menghilangkan unhandled context fault `0x402` pada physical RAM DMA `0x92800000`, sementara DPU, GPU, Wi-Fi, dan USB tetap berjalan aman pada translated SMMU domain.
 - **In-Band SoC Reset & Link Retraining Engine**:
   - `qcom_pcie_cycle_endpoint_reset()` terintegrasi di `pcie-qcom.c` dengan polling loop 3.5 detik (`35 * 100ms`) dan upward device parent traversal untuk menemukan root platform controller `1c10000.pcie`.

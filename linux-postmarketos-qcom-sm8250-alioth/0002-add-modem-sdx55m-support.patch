@@ -349,7 +349,7 @@
  	ee = mhi_get_exec_env(mhi_cntrl);
  
 +
-+	if (state != MHI_STATE_SYS_ERR && ee != mhi_cntrl->ee) {
++	if (mhi_cntrl->wait_for_sbl && state != MHI_STATE_SYS_ERR && ee != mhi_cntrl->ee) {
 +		if (ee == MHI_EE_SBL)
 +			mhi_queue_state_transition(mhi_cntrl, DEV_ST_TRANSITION_SBL);
 +		else if (MHI_IN_MISSION_MODE(ee))
@@ -1492,7 +1492,7 @@
  MODULE_DESCRIPTION("Modem Host Interface (MHI) PCI controller driver");
 --- a/drivers/bus/mhi/host/pm.c	2026-08-29 13:19:00.000000000 +0000
 +++ b/drivers/bus/mhi/host/pm.c	2026-10-14 13:00:00.000000000 +0000
-@@ -167,12 +167,39 @@ static void mhi_toggle_dev_wake(struct m
+@@ -167,12 +167,39 @@
  }
  
  /* Handle device ready state transition */
@@ -1532,10 +1532,11 @@
  	u32 timeout_ms;
  	int ret, i;
  
-@@ -251,6 +278,23 @@ int mhi_ready_state_transition(struct mh
+@@ -250,6 +277,25 @@
+ 	/* Set MHI to M0 state */
  	mhi_set_mhi_state(mhi_cntrl, MHI_STATE_M0);
  	read_unlock_bh(&mhi_cntrl->pm_lock);
- 
++
 +	if (mhi_cntrl->poll_events)
 +		schedule_delayed_work(&mhi_cntrl->ev_poll_work,
 +				      msecs_to_jiffies(2));
@@ -1545,26 +1546,37 @@
 +	 * its EE event delivered, and one found already past PBL will not send
 +	 * another.  Re-read the environment and drive the transition by hand.
 +	 */
-+	ee = mhi_get_exec_env(mhi_cntrl);
-+	if (ee == MHI_EE_SBL || (MHI_IN_MISSION_MODE(ee) && ee != mhi_cntrl->ee)) {
-+		mhi_queue_state_transition(mhi_cntrl,
-+					   ee == MHI_EE_SBL ?
-+					   DEV_ST_TRANSITION_SBL :
-+					   DEV_ST_TRANSITION_MISSION_MODE);
++	if (mhi_cntrl->wait_for_sbl) {
++		ee = mhi_get_exec_env(mhi_cntrl);
++		if (ee == MHI_EE_SBL || (MHI_IN_MISSION_MODE(ee) && ee != mhi_cntrl->ee)) {
++			mhi_queue_state_transition(mhi_cntrl,
++						   ee == MHI_EE_SBL ?
++						   DEV_ST_TRANSITION_SBL :
++						   DEV_ST_TRANSITION_MISSION_MODE);
++		}
 +	}
-+
+ 
  	return 0;
  
- error_mmio:
-@@ -812,6 +856,7 @@ void mhi_pm_st_worker(struct work_struct
+@@ -396,6 +442,9 @@
+ 	struct mhi_event *mhi_event;
+ 	struct device *dev = &mhi_cntrl->mhi_dev->dev;
+ 	enum mhi_ee_type ee = MHI_EE_MAX, current_ee = mhi_cntrl->ee;
++	if (MHI_IN_MISSION_MODE(mhi_cntrl->ee))
++		return 0;
++
+ 	int i, ret;
+ 
+ 	dev_dbg(dev, "Processing Mission Mode transition\n");
+@@ -811,6 +860,7 @@
+ 		list_del(&itr->node);
  
  		trace_mhi_pm_st_transition(mhi_cntrl, itr->state);
- 
 +
+ 
  		switch (itr->state) {
  		case DEV_ST_TRANSITION_PBL:
- 			write_lock_irq(&mhi_cntrl->pm_lock);
-@@ -864,7 +909,7 @@ void mhi_pm_st_worker(struct work_struct
+@@ -864,7 +914,7 @@
  	}
  }
  
@@ -1573,7 +1585,7 @@
  {
  	struct mhi_chan *itr, *tmp;
  	struct device *dev = &mhi_cntrl->mhi_dev->dev;
-@@ -878,8 +923,8 @@ int mhi_pm_suspend(struct mhi_controller
+@@ -878,8 +928,8 @@
  		return -EIO;
  
  	/* Return busy if there are any pending resources */
@@ -1584,7 +1596,7 @@
  		return -EBUSY;
  
  	/* Take MHI out of M2 state */
-@@ -905,8 +950,8 @@ int mhi_pm_suspend(struct mhi_controller
+@@ -905,8 +955,8 @@
  
  	write_lock_irq(&mhi_cntrl->pm_lock);
  
@@ -1595,7 +1607,7 @@
  		write_unlock_irq(&mhi_cntrl->pm_lock);
  		return -EBUSY;
  	}
-@@ -950,8 +995,25 @@ int mhi_pm_suspend(struct mhi_controller
+@@ -950,7 +1000,24 @@
  
  	return 0;
  }
@@ -1605,7 +1617,7 @@
 +	return __mhi_pm_suspend(mhi_cntrl, false);
 +}
  EXPORT_SYMBOL_GPL(mhi_pm_suspend);
- 
++
 +/*
 + * Downstream's mhi_force_suspend(): go to M3 even with queued buffers or a held
 + * wake.  The SDX55 needs one such cycle right after mission mode to retune its
@@ -1617,23 +1629,24 @@
 +	return __mhi_pm_suspend(mhi_cntrl, true);
 +}
 +EXPORT_SYMBOL_GPL(mhi_pm_suspend_force);
-+
+ 
  static int __mhi_pm_resume(struct mhi_controller *mhi_cntrl, bool force)
  {
- 	struct mhi_chan *itr, *tmp;
-@@ -1287,10 +1349,14 @@ int mhi_sync_power_up(struct mhi_control
+@@ -1287,10 +1354,16 @@
  		mhi_cntrl->ready_timeout_ms : mhi_cntrl->timeout_ms;
  	wait_event_timeout(mhi_cntrl->state_event,
  			   MHI_IN_MISSION_MODE(mhi_cntrl->ee) ||
-+			   mhi_cntrl->ee == MHI_EE_SBL ||
-+			   mhi_cntrl->ee == MHI_EE_EDL ||
++			   (mhi_cntrl->wait_for_sbl &&
++			    (mhi_cntrl->ee == MHI_EE_SBL ||
++			     mhi_cntrl->ee == MHI_EE_EDL)) ||
  			   MHI_PM_FATAL_ERROR(mhi_cntrl->pm_state),
  			   msecs_to_jiffies(timeout_ms));
  
 -	ret = (MHI_IN_MISSION_MODE(mhi_cntrl->ee)) ? 0 : -ETIMEDOUT;
 +	ret = (MHI_IN_MISSION_MODE(mhi_cntrl->ee) ||
-+	       mhi_cntrl->ee == MHI_EE_SBL ||
-+	       mhi_cntrl->ee == MHI_EE_EDL) ? 0 : -ETIMEDOUT;
++	       (mhi_cntrl->wait_for_sbl &&
++	        (mhi_cntrl->ee == MHI_EE_SBL ||
++	         mhi_cntrl->ee == MHI_EE_EDL))) ? 0 : -ETIMEDOUT;
  	if (ret)
  		mhi_power_down(mhi_cntrl, false);
  
