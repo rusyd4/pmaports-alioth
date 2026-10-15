@@ -103,6 +103,8 @@ cp "${REPO_DIR}/device-xiaomi-alioth/modem-services/alioth-sim-provision" "${ROO
 [ -f "${REPO_DIR}/device-xiaomi-alioth/modem-services/alioth-switch-sim" ] && \
     cp "${REPO_DIR}/device-xiaomi-alioth/modem-services/alioth-switch-sim" "${ROOTFS}/usr/local/bin/"
 cp "${REPO_DIR}/device-xiaomi-alioth/modem-services/tqftpserv" "${ROOTFS}/usr/local/bin/"
+[ -f "${REPO_DIR}/device-xiaomi-alioth/qbootctl" ] && \
+    cp "${REPO_DIR}/device-xiaomi-alioth/qbootctl" "${ROOTFS}/usr/local/bin/"
 [ -f "${REPO_DIR}/device-xiaomi-alioth/modem-services/0001-alioth-sdx55-support.patch" ] && \
     cp "${REPO_DIR}/device-xiaomi-alioth/modem-services/0001-alioth-sdx55-support.patch" "${ROOTFS}/usr/local/bin/"
 chmod +x "${ROOTFS}/usr/local/bin/"*

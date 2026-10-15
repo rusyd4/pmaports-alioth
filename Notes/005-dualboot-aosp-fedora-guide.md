@@ -33,35 +33,17 @@ On 256GB Poco F3 devices, `/dev/block/sda` has `userdata` as partition **35** (s
    fastboot boot OrangeFox-alioth.img
    ```
 
-2. **Push the ARM64 `parted` bundle to the phone:**
-   *(Android recovery images do not include an ARM64 parted binary. We bundle parted with its musl dynamic loader)*:
+2. **Push the prebuilt ARM64 `parted` bundle to the phone:**
+   *(Use the prebuilt `tools/parted/` bundle provided in this repository)*:
    ```sh
-   # From your PC with the pmaports buildroot:
-   mkdir -p /tmp/parted-arm64/lib /tmp/parted-arm64/bin
-   sudo cp ~/.local/var/pmbootstrap/chroot_buildroot_aarch64/usr/bin/parted /tmp/parted-arm64/bin/
-   sudo cp ~/.local/var/pmbootstrap/chroot_buildroot_aarch64/lib/ld-musl-aarch64.so.1 /tmp/parted-arm64/lib/
-   sudo cp ~/.local/var/pmbootstrap/chroot_buildroot_aarch64/lib/libparted.so* /tmp/parted-arm64/lib/
-   sudo cp ~/.local/var/pmbootstrap/chroot_buildroot_aarch64/lib/libreadline.so* /tmp/parted-arm64/lib/
-   sudo cp ~/.local/var/pmbootstrap/chroot_buildroot_aarch64/lib/libuuid.so* /tmp/parted-arm64/lib/
-   sudo cp ~/.local/var/pmbootstrap/chroot_buildroot_aarch64/lib/libncursesw.so* /tmp/parted-arm64/lib/
-   sudo cp ~/.local/var/pmbootstrap/chroot_buildroot_aarch64/lib/libdevmapper.so* /tmp/parted-arm64/lib/
-   sudo cp ~/.local/var/pmbootstrap/chroot_buildroot_aarch64/lib/libblkid.so* /tmp/parted-arm64/lib/
-   sudo cp ~/.local/var/pmbootstrap/chroot_buildroot_aarch64/usr/lib/libeconf.so* /tmp/parted-arm64/lib/
-
-   cat << 'EOF' > /tmp/parted-arm64/parted
-   #!/system/bin/sh
-   exec /tmp/parted-arm64/lib/ld-musl-aarch64.so.1 --library-path /tmp/parted-arm64/lib /tmp/parted-arm64/bin/parted "$@"
-   EOF
-   chmod +x /tmp/parted-arm64/parted
-
-   adb push /tmp/parted-arm64 /tmp/
-   adb shell "chmod +x /tmp/parted-arm64/parted /tmp/parted-arm64/bin/parted /tmp/parted-arm64/lib/ld-musl-aarch64.so.1"
+   adb push tools/parted /tmp/
+   adb shell "chmod +x /tmp/parted/parted /tmp/parted/bin/parted /tmp/parted/lib/ld-musl-aarch64.so.1"
    ```
 
 3. **In `adb shell`, split partition 35:**
    ```sh
    adb shell
-   cd /tmp/parted-arm64
+   cd /tmp/parted
 
    # 1. Remove existing 242 GB userdata partition
    ./parted /dev/block/sda rm 35

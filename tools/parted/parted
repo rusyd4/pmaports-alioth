@@ -1,0 +1,3 @@
+#!/system/bin/sh
+BASEDIR="$(cd "$(dirname "$0")" && pwd)"
+exec "$BASEDIR/lib/ld-musl-aarch64.so.1" --library-path "$BASEDIR/lib" "$BASEDIR/bin/parted" "$@"

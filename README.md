@@ -1,7 +1,15 @@
 **pmaport for xiaomi poco f3 - alioth**
 
 **Table of Contents**
-- [1. Installation guide](#1-installation-guide)
+- [1. Installation Guide](#1-installation-guide)
+  - [1.1. Single Boot](#11-single-boot)
+    - [Option A: postmarketOS](#option-a-postmarketos)
+    - [Option B: Fedora ARM64 Standalone](#option-b-fedora-arm64-standalone)
+  - [1.2. Dual Boot (AOSP + Fedora)](#12-dual-boot-aosp--fedora)
+    - [Step 1: UFS Partitioning](#step-1-ufs-partitioning-using-prebuilt-parted)
+    - [Step 2: Flash AOSP (Slot A)](#step-2-install-aosp-slot-a)
+    - [Step 3: Flash Fedora (Slot B)](#step-3-install-fedora-slot-b)
+    - [Step 4: Switching Operating Systems](#step-4-switching-operating-systems)
 - [2. Current State](#2-current-state)
 - [3. Introduction](#3-introduction)
 - [4. Getting the Kernel to Work](#4-getting-the-kernel-to-work)
@@ -14,10 +22,21 @@
   - [5.5. Capturing the Logs](#55-capturing-the-logs)
 
 ---
-# 1. Installation guide
+# 1. Installation Guide
 
-After building the device with systemd:
-```
+### Prebuilt Utilities Included in Repository
+- `tools/parted/`: Self-contained ARM64 `parted` bundle for TWRP/OrangeFox custom recovery via `adb`.
+- `tools/qbootctl` / `device-xiaomi-alioth/qbootctl`: Statically compiled aarch64 `qbootctl` (from [linux-msm/qbootctl](https://github.com/linux-msm/qbootctl)) for Qualcomm A/B slot switching without external dependencies. Automatically installed to `/usr/local/bin/qbootctl` on Fedora via `prepare-fedora-rootfs.sh`.
+
+---
+
+## 1.1. Single Boot
+
+### Option A: postmarketOS
+
+Build packages and rootfs via `pmbootstrap`:
+```sh
+# Flash rootfs and kernel to Slot B
 fastboot erase dtbo_b
 pmbootstrap flasher flash_rootfs --partition userdata
 pmbootstrap flasher flash_kernel --partition boot_b
@@ -25,7 +44,156 @@ fastboot set_active b
 fastboot reboot
 ```
 
-~~Needs reboot after first boot, because of the issues with GUI.~~
+### Option B: Fedora ARM64 Standalone
+
+1. **Build prepared Fedora rootfs sparse image:**
+   ```sh
+   sudo ./build-fedora-rootfs.sh /path/to/Fedora-KDE-Mobile-Disk-*.raw fedora-rootfs.simg
+   ```
+   *(Or mount manually and run `sudo ./prepare-fedora-rootfs.sh /mnt/fedora`, which injects modules, firmware, UCM2 audio profiles, cellular config, modem services, and prebuilt `qbootctl`).*
+
+2. **Repack `boot.img` for `userdata` partition:**
+   ```sh
+   mkdir -p /tmp/boot_unpack
+   unpack_bootimg \
+     --boot_img ~/.local/var/pmbootstrap/chroot_rootfs_xiaomi-alioth/boot/boot.img \
+     --out /tmp/boot_unpack
+
+   mkbootimg \
+     --header_version 0 \
+     --kernel /tmp/boot_unpack/kernel \
+     --ramdisk /tmp/boot_unpack/ramdisk \
+     --pagesize 0x00001000 \
+     --base 0x00000000 \
+     --kernel_offset 0x00008000 \
+     --ramdisk_offset 0x01000000 \
+     --second_offset 0x00f00000 \
+     --tags_offset 0x00000100 \
+     --board '' \
+     --cmdline 'quiet splash plymouth.ignore-serial-consoles plymouth.prefer-fbcon pmos_root=/dev/disk/by-partlabel/userdata pmos_rootfsopts=subvol=root selinux=0' \
+     -o ~/boot_fedora.img
+
+   rm -rf /tmp/boot_unpack
+   ```
+
+3. **Flash via Fastboot:**
+   ```sh
+   fastboot erase dtbo_b
+   fastboot flash boot_b ~/boot_fedora.img
+   fastboot flash userdata ~/fedora-rootfs.simg
+   fastboot set_active b
+   fastboot reboot
+   ```
+
+---
+
+## 1.2. Dual Boot (AOSP + Fedora)
+
+Dual boot Android (Slot A) and Fedora Linux (Slot B) by splitting the 242 GB `userdata` partition into two 121 GB partitions:
+- Partition 35: `userdata` (121 GB, Android storage, encrypted)
+- Partition 36: `linux` (121 GB, Btrfs, Fedora rootfs)
+
+### Step 1: UFS Partitioning (using prebuilt `parted`)
+
+1. Boot into OrangeFox or TWRP recovery:
+   ```sh
+   fastboot boot OrangeFox-alioth.img
+   ```
+
+2. Push prebuilt ARM64 `parted` from this repository:
+   ```sh
+   adb push tools/parted /tmp/
+   adb shell "chmod +x /tmp/parted/parted /tmp/parted/bin/parted /tmp/parted/lib/ld-musl-aarch64.so.1"
+   ```
+
+3. Repartition `/dev/block/sda` in `adb shell`:
+   ```sh
+   adb shell
+   cd /tmp/parted
+
+   # Remove original 242 GB userdata partition
+   ./parted /dev/block/sda rm 35
+   # Type 'i' when prompted (Ignore/Cancel)
+
+   # Create 121 GB userdata for Android
+   ./parted /dev/block/sda mkpart userdata ext4 11.4GB 132GB
+
+   # Create 121 GB dedicated linux partition for Fedora
+   ./parted /dev/block/sda mkpart linux btrfs 132GB 253GB
+
+   # Verify partition table
+   ./parted /dev/block/sda print
+   exit
+   ```
+
+4. Reload partition table and format Android data:
+   ```sh
+   adb reboot recovery
+   ```
+   In recovery GUI: **Wipe -> Format Data -> type `yes`**.
+
+### Step 2: Install AOSP (Slot A)
+
+1. Activate Slot A:
+   ```sh
+   fastboot set_active a
+   ```
+2. Flash your ROM zip (LineageOS, PixelOS, etc.) via recovery or fastboot.
+3. Boot Android once to complete initial setup and initialize encryption on partition 35.
+
+### Step 3: Install Fedora (Slot B)
+
+1. **Repack `boot.img` for `linux` partition (`pmos_root=/dev/disk/by-partlabel/linux`):**
+   ```sh
+   mkdir -p /tmp/boot_unpack
+   unpack_bootimg \
+     --boot_img ~/.local/var/pmbootstrap/chroot_rootfs_xiaomi-alioth/boot/boot.img \
+     --out /tmp/boot_unpack
+
+   mkbootimg \
+     --header_version 0 \
+     --kernel /tmp/boot_unpack/kernel \
+     --ramdisk /tmp/boot_unpack/ramdisk \
+     --pagesize 0x00001000 \
+     --base 0x00000000 \
+     --kernel_offset 0x00008000 \
+     --ramdisk_offset 0x01000000 \
+     --second_offset 0x00f00000 \
+     --tags_offset 0x00000100 \
+     --board '' \
+     --cmdline 'quiet splash plymouth.ignore-serial-consoles plymouth.prefer-fbcon pmos_root=/dev/disk/by-partlabel/linux pmos_rootfsopts=subvol=root selinux=0' \
+     -o ~/boot_fedora_dualboot.img
+
+   rm -rf /tmp/boot_unpack
+   ```
+
+2. **Flash Fedora to Slot B and dedicated `linux` partition:**
+   ```sh
+   fastboot erase dtbo_b
+   fastboot flash boot_b ~/boot_fedora_dualboot.img
+   fastboot flash linux ~/fedora-rootfs.simg
+   ```
+
+### Step 4: Switching Operating Systems
+
+- **Via Fastboot (from PC):**
+  ```sh
+  fastboot set_active a && fastboot reboot   # Boot Android
+  fastboot set_active b && fastboot reboot   # Boot Fedora
+  ```
+- **From inside Android (Root):**
+  ```sh
+  su
+  bootctl set-active-boot-slot 1
+  reboot
+  ```
+  *(Or use the BootControl app from F-Droid).*
+- **From inside Fedora:**
+  ```sh
+  sudo qbootctl -s a
+  sudo reboot
+  ```
+  *(Prebuilt `qbootctl` is installed in `/usr/local/bin/qbootctl` automatically).*
 
 # 2. Current State
 Device was built and tested with plasma-mobile UI with systemd.
