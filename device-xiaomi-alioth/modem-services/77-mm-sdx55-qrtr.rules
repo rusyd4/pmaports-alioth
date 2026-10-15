@@ -1,0 +1,13 @@
+# ModemManager builds the modem out of the QRTR node, as a synthetic device
+# called "qcom-soc", and then refuses it with "Failed to find a net port in the
+# QMI modem" because our data interface belongs to the PCI device instead.
+# Ports are grouped by physdev uid, so both interfaces need the tag: rmnet0
+# inherits its parent from the lower device, so tagging rmnet0 alone is not
+# enough.
+SUBSYSTEM=="net", KERNEL=="rmnet*",    ENV{ID_MM_PHYSDEV_UID}="qcom-soc"
+SUBSYSTEM=="net", KERNEL=="mhi_hwip*", ENV{ID_MM_PHYSDEV_UID}="qcom-soc"
+
+# The MHI wwan ports are useless to ModemManager on this modem and probing them
+# times the whole detection out: wwan0qmi0 never answers (control really lives
+# on QRTR/IPCR) and wwan0xmmrpc0 is the EFS channel our own server owns.
+SUBSYSTEM=="wwan", ENV{ID_MM_PORT_IGNORE}="1"

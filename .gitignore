@@ -1,3 +1,5 @@
 postmarketOS-export/
 *.img
 *.simg
+*.rpm
+!rpms/*.rpm

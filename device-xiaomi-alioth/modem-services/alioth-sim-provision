@@ -67,7 +67,7 @@ power_cycle_slot () {
 n=0
 changed=1
 # User requested Slot 2 (089668852546) as Primary
-PRIMARY_SLOT=${MODEM_PRIMARY_SLOT:-2}
+PRIMARY_SLOT=${MODEM_PRIMARY_SLOT:-1}
 slots=("$PRIMARY_SLOT" $([ "$PRIMARY_SLOT" = "1" ] && echo 2 || echo 1))
 for slot in "${slots[@]}"; do
     aid=$(slot_aid "$slot")

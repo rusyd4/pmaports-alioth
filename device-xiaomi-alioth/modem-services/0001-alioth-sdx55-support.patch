@@ -1,0 +1,92 @@
+diff --git a/src/mm-bearer-qmi.c b/src/mm-bearer-qmi.c
+index cf6c1fc..e11d3a1 100644
+--- a/src/mm-bearer-qmi.c
++++ b/src/mm-bearer-qmi.c
+@@ -2442,7 +2442,11 @@ load_settings_from_bearer (MMBearerQmi         *self,
+     if (ctx->multiplex == MM_BEARER_MULTIPLEX_SUPPORT_UNKNOWN) {
+         if (mm_context_get_test_multiplex_requested ())
+             ctx->multiplex = MM_BEARER_MULTIPLEX_SUPPORT_REQUESTED;
+-        else if (!g_strcmp0 (data_port_driver, "ipa"))
++        else if (!g_strcmp0 (data_port_driver, "ipa") ||
++                 !g_strcmp0 (data_port_driver, "mhi_net"))
++            /* Same as IPA: on MHI the data path is QMAP over rmnet links, and
++             * the non-multiplexed path never binds the WDS client, so Start
++             * Network answers InvalidOperation. */
+             ctx->multiplex = MM_BEARER_MULTIPLEX_SUPPORT_REQUIRED;
+         else
+             ctx->multiplex = MM_BEARER_MULTIPLEX_SUPPORT_NONE;
+diff --git a/src/mm-broadband-modem.c b/src/mm-broadband-modem.c
+index c14bce3..d4365b1 100644
+--- a/src/mm-broadband-modem.c
++++ b/src/mm-broadband-modem.c
+@@ -4639,6 +4639,13 @@ complete_sim_swap_check (GTask       *task,
+     } else
+         g_assert_not_reached();
+ 
++    /* Nothing cached yet means we have never managed to read the value, not
++     * that the card was swapped.  Modems that emit a card status change while
++     * the SIM object is still being filled in would otherwise be reprobed
++     * forever.  The IMSI branch above already guards against this case. */
++    if (TRUE)
++        ignore_sim_event = TRUE;
++
+     same = (g_strcmp0 (current, cached) == 0);
+     if (same) {
+         mm_obj_info (self, "SIM %s has not changed: %s",
+diff --git a/src/mm-shared-qmi.c b/src/mm-shared-qmi.c
+--- a/src/mm-shared-qmi.c
++++ b/src/mm-shared-qmi.c
+@@ -3390,6 +3390,9 @@
+         return;
+     }
+ 
++    /* Whether the slot picked as active so far actually holds a card */
++    gboolean active_slot_has_card = FALSE;
++
+     ctx->sim_slots = g_ptr_array_new_full (physical_slots->len, (GDestroyNotify) sim_slot_free);
+ 
+     for (i = 0; i < physical_slots->len; i++) {
+@@ -3405,9 +3408,22 @@
+         /* Store active slot info */
+         slot_status = &g_array_index (physical_slots, QmiPhysicalSlotStatusSlot, i);
+         if (slot_status->physical_slot_status == QMI_UIM_SLOT_STATE_ACTIVE) {
++            gboolean has_card = (slot_status->iccid->len > 0);
++
+             sim_active = TRUE;
+-            ctx->active_logical_id = slot_status->logical_slot;
+-            ctx->active_slot_number = i + 1;
++            /* A dual SIM modem powers both slots and reports both as active, so
++             * simply keeping the last one seen picks a slot at random.  Prefer a
++             * slot that holds a usable card - an empty or unresponsive one has no
++             * ICCID - and only among equals prefer the lowest logical slot, which
++             * is the primary subscription. */
++            if (!ctx->active_slot_number ||
++                (has_card && !active_slot_has_card) ||
++                (has_card == active_slot_has_card &&
++                 slot_status->logical_slot < ctx->active_logical_id)) {
++                ctx->active_logical_id = slot_status->logical_slot;
++                ctx->active_slot_number = i + 1;
++                active_slot_has_card = has_card;
++            }
+         }
+ 
+         if (!slot_status->iccid->len) {
+diff --git a/src/plugins/qcom-soc/mm-broadband-modem-qmi-qcom-soc.c b/src/plugins/qcom-soc/mm-broadband-modem-qmi-qcom-soc.c
+index fa19bd4..a3a23c7 100644
+--- a/src/plugins/qcom-soc/mm-broadband-modem-qmi-qcom-soc.c
++++ b/src/plugins/qcom-soc/mm-broadband-modem-qmi-qcom-soc.c
+@@ -131,6 +131,14 @@ peek_port_qmi_for_data (MMBroadbandModemQmi  *self,
+     if (g_strcmp0 (net_port_driver, "bam-dmux") == 0)
+         return peek_port_qmi_for_data_bam_dmux (self, data, out_endpoint, error);
+ 
++    /* An external modem reached over PCIe speaks MHI, and its data interface is
++     * mhi_net - or an rmnet link stacked on top of it when QMAP is in use.
++     * There is no IPA in that path, but the port handling is the same: any QMI
++     * port can drive the session. */
++    if (g_strcmp0 (net_port_driver, "mhi_net") == 0 ||
++        g_strcmp0 (net_port_driver, "rmnet") == 0)
++        return peek_port_qmi_for_data_ipa (self, data, out_endpoint, error);
++
+     g_set_error (error,
+                  MM_CORE_ERROR,
+                  MM_CORE_ERROR_FAILED,

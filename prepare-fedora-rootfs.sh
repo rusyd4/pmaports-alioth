@@ -64,23 +64,79 @@ ln -sf /etc/systemd/system/alioth-bluetooth.service "${ROOTFS}/etc/systemd/syste
 cp "${REPO_DIR}/device-xiaomi-alioth/bluetooth-modules.conf" "${ROOTFS}/etc/modules-load.d/bluetooth.conf"
 
 echo "==> [4/8] Applying Network & Sensor Configuration..."
-mkdir -p "${ROOTFS}/etc/NetworkManager/conf.d" "${ROOTFS}/usr/lib/udev/rules.d"
+mkdir -p "${ROOTFS}/etc/NetworkManager/conf.d" "${ROOTFS}/usr/lib/udev/rules.d" "${ROOTFS}/etc/NetworkManager/system-connections" "${ROOTFS}/etc/xdg"
 cp "${REPO_DIR}/device-xiaomi-alioth/wifi-powersave.conf" "${ROOTFS}/etc/NetworkManager/conf.d/"
 cp "${REPO_DIR}/device-xiaomi-alioth/81-libssc-xiaomi-alioth.rules" "${ROOTFS}/usr/lib/udev/rules.d/"
 
+# Disable KWallet prompt on Plasma Mobile
+cat << 'EOF_KWALLET' > "${ROOTFS}/etc/xdg/kwalletrc"
+[Wallet]
+Enabled=false
+First Use=false
+EOF_KWALLET
+
+# Pre-configure generic cellular connection for ModemManager / NetworkManager
+cat << 'EOF_NM_CELL' > "${ROOTFS}/etc/NetworkManager/system-connections/cellular.nmconnection"
+[connection]
+id=Cellular
+uuid=353c57c8-7c00-407c-a3dd-01b24af2738f
+type=gsm
+interface-name=qrtr3
+autoconnect=true
+
+[gsm]
+apn=internet
+
+[ipv4]
+method=auto
+
+[ipv6]
+method=auto
+EOF_NM_CELL
+chmod 600 "${ROOTFS}/etc/NetworkManager/system-connections/cellular.nmconnection"
+
 echo "==> [5/8] Setting up SDX55 Modem Daemons & Services..."
-mkdir -p "${ROOTFS}/usr/local/bin" "${ROOTFS}/etc/systemd/system/multi-user.target.wants" "${ROOTFS}/etc/udev/rules.d" "${ROOTFS}/etc/modules-load.d"
+mkdir -p "${ROOTFS}/usr/local/bin" "${ROOTFS}/etc/systemd/system/multi-user.target.wants" "${ROOTFS}/etc/udev/rules.d" "${ROOTFS}/etc/modules-load.d" "${ROOTFS}/usr/share/applications"
 cp "${REPO_DIR}/device-xiaomi-alioth/modem-services/"*.py "${ROOTFS}/usr/local/bin/"
 cp "${REPO_DIR}/device-xiaomi-alioth/modem-services/"*.sh "${ROOTFS}/usr/local/bin/"
 cp "${REPO_DIR}/device-xiaomi-alioth/modem-services/alioth-sim-provision" "${ROOTFS}/usr/local/bin/"
+[ -f "${REPO_DIR}/device-xiaomi-alioth/modem-services/alioth-switch-sim" ] && \
+    cp "${REPO_DIR}/device-xiaomi-alioth/modem-services/alioth-switch-sim" "${ROOTFS}/usr/local/bin/"
 cp "${REPO_DIR}/device-xiaomi-alioth/modem-services/tqftpserv" "${ROOTFS}/usr/local/bin/"
+[ -f "${REPO_DIR}/device-xiaomi-alioth/modem-services/0001-alioth-sdx55-support.patch" ] && \
+    cp "${REPO_DIR}/device-xiaomi-alioth/modem-services/0001-alioth-sdx55-support.patch" "${ROOTFS}/usr/local/bin/"
 chmod +x "${ROOTFS}/usr/local/bin/"*
+
+# Plasma Mobile GUI shortcuts for switching SIM
+cat << 'EOF_SIM1_DESKTOP' > "${ROOTFS}/usr/share/applications/alioth-sim1.desktop"
+[Desktop Entry]
+Name=Ganti ke SIM 1
+Comment=Aktifkan data seluler pada Slot 1
+Exec=/usr/local/bin/alioth-switch-sim 1
+Icon=network-cellular
+Terminal=false
+Type=Application
+Categories=Settings;System;
+EOF_SIM1_DESKTOP
+
+cat << 'EOF_SIM2_DESKTOP' > "${ROOTFS}/usr/share/applications/alioth-sim2.desktop"
+[Desktop Entry]
+Name=Ganti ke SIM 2
+Comment=Aktifkan data seluler pada Slot 2
+Exec=/usr/local/bin/alioth-switch-sim 2
+Icon=network-cellular
+Terminal=false
+Type=Application
+Categories=Settings;System;
+EOF_SIM2_DESKTOP
 
 cp "${REPO_DIR}/device-xiaomi-alioth/modem-services/modem-modules.conf" "${ROOTFS}/etc/modules-load.d/modem.conf"
 cp "${REPO_DIR}/device-xiaomi-alioth/modem-services/alioth-modem-firmware.service" "${ROOTFS}/etc/systemd/system/"
 cp "${REPO_DIR}/device-xiaomi-alioth/modem-services/alioth-modem.service" "${ROOTFS}/etc/systemd/system/"
 cp "${REPO_DIR}/device-xiaomi-alioth/modem-services/tqftpserv.service" "${ROOTFS}/etc/systemd/system/"
 cp "${REPO_DIR}/device-xiaomi-alioth/modem-services/77-mm-ignore-sdx55-extra.rules" "${ROOTFS}/etc/udev/rules.d/"
+[ -f "${REPO_DIR}/device-xiaomi-alioth/modem-services/77-mm-sdx55-qrtr.rules" ] && \
+    cp "${REPO_DIR}/device-xiaomi-alioth/modem-services/77-mm-sdx55-qrtr.rules" "${ROOTFS}/etc/udev/rules.d/"
 
 ln -sf ../alioth-modem-firmware.service "${ROOTFS}/etc/systemd/system/multi-user.target.wants/alioth-modem-firmware.service"
 ln -sf ../tqftpserv.service "${ROOTFS}/etc/systemd/system/multi-user.target.wants/tqftpserv.service"
@@ -94,6 +150,22 @@ ln -sf /usr/local/bin/data_up.py "${ROOTFS}/usr/share/alioth-modem/data_up.py"
 echo "==> [6/8] Configuring Root Credentials & SSH Access (enabled by default)..."
 HASH=$(openssl passwd -6 fedora)
 sed -i "s|^root:!:[^:]*|root:${HASH}:20565|" "${ROOTFS}/etc/shadow"
+
+# Inject custom RPMs (e.g. ModemManager)
+if compgen -G "${REPO_DIR}/rpms/*.rpm" > /dev/null || compgen -G "${REPO_DIR}/device-xiaomi-alioth/rpms/*.rpm" > /dev/null; then
+    echo "    Injecting custom RPM packages into rootfs..."
+    mkdir -p "${ROOTFS}/var/cache/rpms"
+    for rpm in "${REPO_DIR}"/rpms/*.rpm "${REPO_DIR}"/device-xiaomi-alioth/rpms/*.rpm; do
+        [ -f "$rpm" ] || continue
+        echo "    -> $(basename "$rpm")"
+        cp "$rpm" "${ROOTFS}/var/cache/rpms/"
+        if command -v bsdtar >/dev/null 2>&1; then
+            bsdtar --no-xattrs --no-fflags -xf "$rpm" -C "${ROOTFS}"
+        elif command -v rpm2cpio >/dev/null 2>&1; then
+            (cd "${ROOTFS}" && rpm2cpio "$rpm" | cpio -idm)
+        fi
+    done
+fi
 
 mkdir -p "${ROOTFS}/root/.ssh"
 if compgen -G "${USER_HOME}/.ssh/id_*.pub" > /dev/null; then
@@ -132,12 +204,13 @@ ln -sf /dev/null "${ROOTFS}/etc/systemd/system/firewalld.service"
 echo "==> [7/8] Patching /etc/fstab..."
 sed -i '/\/boot/s/^/#/' "${ROOTFS}/etc/fstab"
 
-echo "==> [8/8] Blocking Fedora kernel packages in DNF..."
+echo "==> [8/8] Blocking Fedora kernel and ModemManager packages in DNF..."
 mkdir -p "${ROOTFS}/etc/dnf"
 if [ -f "${ROOTFS}/etc/dnf/dnf.conf" ]; then
     grep -q "excludepkgs=.*kernel" "${ROOTFS}/etc/dnf/dnf.conf" || echo "excludepkgs=kernel*" >> "${ROOTFS}/etc/dnf/dnf.conf"
+    grep -q "ModemManager" "${ROOTFS}/etc/dnf/dnf.conf" || sed -i '/excludepkgs=/ s/$/ ModemManager*/' "${ROOTFS}/etc/dnf/dnf.conf"
 else
-    printf "[main]\nexcludepkgs=kernel*\n" > "${ROOTFS}/etc/dnf/dnf.conf"
+    printf "[main]\nexcludepkgs=kernel* ModemManager*\n" > "${ROOTFS}/etc/dnf/dnf.conf"
 fi
 
 echo "==> Configuration complete for ${ROOTFS}!"

@@ -64,8 +64,14 @@ SNS=/usr/share/qcom/sm8250/xiaomi/alioth
 # The efs*.bin shipped next to the images are placeholders - they say
 # "IMGEFS- DUMMY-1" inside - and a modem fed those comes up in factory test mode
 # with no IMEI.  The real thing lives in these partitions.
-for n in 1 2 3; do
-	[ -s "$FW/efs${n}_real.bin" ] && continue
-	dd if="$(part "mdm1m9kefs$n")" of="$FW/efs${n}_real.bin" bs=1M status=none
-	echo "efs${n}_real.bin taken from mdm1m9kefs$n"
-done
+	for n in 1 2 3; do
+		[ -s "$FW/efs${n}_real.bin" ] && continue
+		dd if="$(part "mdm1m9kefs$n")" of="$FW/efs${n}_real.bin" bs=1M status=none
+		echo "efs${n}_real.bin taken from mdm1m9kefs$n"
+	done
+
+# Ensure prebuilt RPM packages (e.g. patched ModemManager) are cleanly installed
+if compgen -G "/var/cache/rpms/*.rpm" > /dev/null; then
+	echo "Installing prebuilt custom RPMs..."
+	rpm -Uvh --nodeps --nosignature --replacepkgs --replacefiles /var/cache/rpms/*.rpm >/dev/null 2>&1 || true
+fi

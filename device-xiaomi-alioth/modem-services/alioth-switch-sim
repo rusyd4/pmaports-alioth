@@ -1,0 +1,44 @@
+#!/bin/bash
+# Switch primary SIM slot for mobile data on Poco F3 (alioth)
+set -euo pipefail
+
+DEV=qrtr://3
+SLOT="${1:-}"
+
+if [ "$SLOT" != "1" ] && [ "$SLOT" != "2" ]; then
+    echo "Usage: alioth-switch-sim [1|2]"
+    CURRENT=$(qmicli -d $DEV --uim-get-card-status 2>/dev/null | grep "Primary GW:" | awk '{print $4}' | tr -d "', ")
+    echo "Current Primary Slot: ${CURRENT:-unknown}"
+    exit 1
+fi
+
+OTHER_SLOT=$([ "$SLOT" = "1" ] && echo 2 || echo 1)
+
+slot_aid() {
+    qmicli -d $DEV --uim-get-card-status 2>/dev/null |
+        awk -v want="Slot [$1]:" '
+            index($0, want) {inslot=1; next}
+            inslot && index($0, "Slot [") {exit}
+            inslot && /usim/ {u=1}
+            inslot && u && /^\t+A0:/ {gsub(/[: \t]/,""); print; exit}'
+}
+
+AID_NEW=$(slot_aid "$SLOT")
+AID_OTHER=$(slot_aid "$OTHER_SLOT")
+
+if [ -z "$AID_NEW" ]; then
+    echo "ERROR: Slot $SLOT has no active USIM application!" >&2
+    exit 1
+fi
+
+echo "==> Switching Primary GW to Slot $SLOT..."
+qmicli -d $DEV --uim-change-provisioning-session="session-type=primary-gw-provisioning,activate=yes,slot=$SLOT,aid=$AID_NEW"
+
+if [ -n "$AID_OTHER" ]; then
+    echo "==> Setting Secondary GW to Slot $OTHER_SLOT..."
+    qmicli -d $DEV --uim-change-provisioning-session="session-type=secondary-gw-provisioning,activate=yes,slot=$OTHER_SLOT,aid=$AID_OTHER"
+fi
+
+echo "==> Restarting ModemManager..."
+systemctl restart ModemManager
+echo "==> Switched to Slot $SLOT successfully."

@@ -11,7 +11,7 @@
 # lives only as long as the QMI client that started it.
 set -u
 
-APN="${MODEM_APN:-internet.mts.ru}"
+APN="${MODEM_APN:-internet}"
 APN_USER="${MODEM_APN_USER:--}"
 APN_PASS="${MODEM_APN_PASS:--}"
 EP_IFACE=4
@@ -23,6 +23,11 @@ log() { echo "[$(date +%T)] $*" | tee -a "$LOG"; }
 
 mkdir -p /readwrite
 : > "$LOG"
+
+# Set sane minimum timestamp if clock reset to 1970 on cold boot
+if [ "$(date +%Y)" -lt 2026 ]; then
+    date -s "2026-10-15 12:00:00" >/dev/null 2>&1 || true
+fi
 
 # tqftpserv and pd-mapper are services of their own here, and the unit orders
 # us after them - starting a second copy only fights the first for the QRTR
@@ -99,8 +104,16 @@ systemctl restart ModemManager
 # Start Network answers InvalidOperation.  Until that is sorted out, raise the
 # session ourselves - SMS, SIM and signal still go through ModemManager.
 # ModemManager can drive the bearer with the patches in this tree, so this
-# is off by default now; set MODEM_SELF_DATA=1 to raise the session by hand.
-if [ "${MODEM_SELF_DATA:-1}" = "1" ]; then
+# is off by default when patched; set MODEM_SELF_DATA=1 to force session by hand.
+MM_PATCHED=0
+for so in /usr/lib64/ModemManager/libmm-plugin-qcom-soc.so /usr/lib/ModemManager/libmm-plugin-qcom-soc.so; do
+    if [ -f "$so" ] && grep -Fq "mhi_net" "$so" 2>/dev/null; then
+        MM_PATCHED=1
+        break
+    fi
+done
+
+if [ "${MODEM_SELF_DATA:-$((1 - MM_PATCHED))}" = "1" ]; then
     ip link set mhi_hwip0 up
     ip link del rmnet0 2>/dev/null
     ip link add rmnet0 link mhi_hwip0 type rmnet mux_id $MUX_ID
@@ -140,3 +153,17 @@ if [ "${MODEM_SELF_DATA:-1}" = "1" ]; then
 fi
 
 log "modem ready"
+
+# Automatically bring up cellular data connection via NetworkManager
+if [ "${MM_PATCHED}" = "1" ]; then
+    (
+        for i in $(seq 1 30); do
+            if mmcli -m 0 >/dev/null 2>&1; then
+                mmcli -m 0 -e >/dev/null 2>&1 || true
+                sleep 2
+                nmcli connection up Cellular >/dev/null 2>&1 && break
+            fi
+            sleep 2
+        done
+    ) &
+fi
