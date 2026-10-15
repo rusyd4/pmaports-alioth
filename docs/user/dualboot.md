@@ -8,7 +8,7 @@ Complete, self-contained guide to dual boot **Android (AOSP)** and **Fedora Linu
 
 | Component | Slot A (Android / AOSP) | Slot B (Fedora Linux) |
 | :--- | :--- | :--- |
-| **Boot Kernel** | `boot_a` (Android / AOSP kernel) | `boot_b` (Mainline Linux `boot_fedora_dualboot.img`) |
+| **Boot Kernel** | `boot_a` (Android / AOSP kernel) | `boot_b` (Mainline Linux `boot_linux.img`) |
 | **DTBO** | `dtbo_a` (OEM DTBO) | `dtbo_b` (erased / empty) |
 | **System** | Dynamic partitions in `super` | Rootfs on dedicated `linux` partition |
 | **Data Storage** | `userdata` (Partition 35: 121 GB, F2FS/ext4, encrypted) | `linux` (Partition 36: 121 GB, Btrfs, unencrypted) |
@@ -84,38 +84,47 @@ On 256GB Poco F3 devices, `/dev/block/sda` has `userdata` as partition **35** (s
 
 ## 4. Step 3: Install Fedora on Slot B
 
-1. **Repack `boot.img` for the dedicated `linux` partition (`pmos_root=/dev/disk/by-partlabel/linux`):**
-   ```sh
-   mkdir -p /tmp/boot_unpack
-   unpack_bootimg \
-     --boot_img ~/.local/var/pmbootstrap/chroot_rootfs_xiaomi-alioth/boot/boot.img \
-     --out /tmp/boot_unpack
+### 1. Download Prebuilt Dual Boot Images (Recommended)
+Download release assets from **[GitHub Releases](https://github.com/rusyd4/pmaports-alioth/releases)**:
+* **`boot_linux.img`**: Prebuilt boot image configured with rootfs cmdline for the dedicated `linux` partition (`pmos_root=/dev/disk/by-partlabel/linux`).
+* **`fedora-rootfs.simg`**: Prebuilt Fedora KDE Mobile rootfs sparse image.
 
-   mkbootimg \
-     --header_version 0 \
-     --kernel /tmp/boot_unpack/kernel \
-     --ramdisk /tmp/boot_unpack/ramdisk \
-     --pagesize 0x00001000 \
-     --base 0x00000000 \
-     --kernel_offset 0x00008000 \
-     --ramdisk_offset 0x01000000 \
-     --second_offset 0x00f00000 \
-     --tags_offset 0x00000100 \
-     --board '' \
-     --cmdline 'quiet splash plymouth.ignore-serial-consoles plymouth.prefer-fbcon pmos_root=/dev/disk/by-partlabel/linux pmos_rootfsopts=subvol=root selinux=0' \
-     -o ~/boot_fedora_dualboot.img
-
-   rm -rf /tmp/boot_unpack
-   ```
-
-2. **Reboot phone to Fastboot mode (Power + Volume Down).**
-
-3. **Flash Fedora kernel to Slot B & rootfs to dedicated `linux` partition:**
+### 2. Flash via Fastboot
+1. Reboot phone to Fastboot mode (Power + Volume Down).
+2. Flash the kernel to Slot B and rootfs to the dedicated `linux` partition:
    ```sh
    fastboot erase dtbo_b
-   fastboot flash boot_b ~/boot_fedora_dualboot.img
-   fastboot flash linux ~/fedora-rootfs.simg
+   fastboot flash boot_b boot_linux.img
+   fastboot flash linux fedora-rootfs.simg
    ```
+
+<details>
+<summary><b>🛠️ Repacking Boot Image Manually (Optional / Advanced)</b></summary>
+
+If you want to repack `boot_linux.img` yourself from a postmarketOS `boot.img`:
+```sh
+mkdir -p /tmp/boot_unpack
+unpack_bootimg \
+  --boot_img ~/.local/var/pmbootstrap/chroot_rootfs_xiaomi-alioth/boot/boot.img \
+  --out /tmp/boot_unpack
+
+mkbootimg \
+  --header_version 0 \
+  --kernel /tmp/boot_unpack/kernel \
+  --ramdisk /tmp/boot_unpack/ramdisk \
+  --pagesize 0x00001000 \
+  --base 0x00000000 \
+  --kernel_offset 0x00008000 \
+  --ramdisk_offset 0x01000000 \
+  --second_offset 0x00f00000 \
+  --tags_offset 0x00000100 \
+  --board '' \
+  --cmdline 'quiet splash plymouth.ignore-serial-consoles plymouth.prefer-fbcon pmos_root=/dev/disk/by-partlabel/linux pmos_rootfsopts=subvol=root selinux=0' \
+  -o ~/boot_linux.img
+
+rm -rf /tmp/boot_unpack
+```
+</details>
 
 ---
 

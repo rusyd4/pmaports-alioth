@@ -40,6 +40,15 @@ Mainline Linux kernel, postmarketOS packages, and Fedora ARM64 (KDE Plasma Mobil
 
 ---
 
+## Releases & Prebuilt Images
+
+Prebuilt images are available on **[GitHub Releases](https://github.com/rusyd4/pmaports-alioth/releases)**:
+* **`boot_fedora.img`**: Boot image for single boot Fedora on the `userdata` partition.
+* **`boot_linux.img`**: Boot image for dual boot Fedora on the dedicated `linux` partition.
+* **`fedora-rootfs.simg`**: Prebuilt Fedora KDE Mobile rootfs sparse image with injected kernel modules, firmware, UCM2 audio profiles, cellular services, and `qbootctl`.
+
+---
+
 ## Documentation
 
 Comprehensive guides are organized in the [`docs/`](docs/) directory:
