@@ -112,8 +112,10 @@ chmod +x "${ROOTFS}/usr/local/bin/"*
 # Plasma Mobile GUI shortcuts for switching SIM
 cat << 'EOF_SIM1_DESKTOP' > "${ROOTFS}/usr/share/applications/alioth-sim1.desktop"
 [Desktop Entry]
-Name=Ganti ke SIM 1
-Comment=Aktifkan data seluler pada Slot 1
+Name=Switch to SIM 1
+Name[id]=Ganti ke SIM 1
+Comment=Enable mobile data on SIM Slot 1
+Comment[id]=Aktifkan data seluler pada Slot 1
 Exec=/usr/local/bin/alioth-switch-sim 1
 Icon=network-cellular
 Terminal=false
@@ -123,8 +125,10 @@ EOF_SIM1_DESKTOP
 
 cat << 'EOF_SIM2_DESKTOP' > "${ROOTFS}/usr/share/applications/alioth-sim2.desktop"
 [Desktop Entry]
-Name=Ganti ke SIM 2
-Comment=Aktifkan data seluler pada Slot 2
+Name=Switch to SIM 2
+Name[id]=Ganti ke SIM 2
+Comment=Enable mobile data on SIM Slot 2
+Comment[id]=Aktifkan data seluler pada Slot 2
 Exec=/usr/local/bin/alioth-switch-sim 2
 Icon=network-cellular
 Terminal=false

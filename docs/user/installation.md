@@ -1,51 +1,51 @@
 # Installation Guide: Xiaomi Poco F3 (alioth)
 
-Panduan instalasi mainline Linux (postmarketOS & Fedora ARM64) pada Xiaomi Poco F3 (`alioth`).
+Mainline Linux installation guide (postmarketOS & Fedora ARM64) for the Xiaomi Poco F3 (`alioth`).
 
 ---
 
-## 1. Persyaratan Awal (Host PC)
+## 1. Prerequisites (Host PC)
 
-Pastikan host PC memiliki tools berikut:
+Ensure your host PC has the required tools installed:
 ```sh
 # Arch Linux
 sudo pacman -S android-tools btrfs-progs
 
 # Debian / Ubuntu / Fedora
 sudo apt install android-tools-adb android-tools-fastboot btrfs-progs
-# atau: sudo dnf install android-tools btrfs-progs
+# or: sudo dnf install android-tools btrfs-progs
 ```
 
-Phone requirement:
-- Bootloader ter-unlock (unlocked bootloader).
-- Kabel USB-C yang stabil.
-- Custom recovery (OrangeFox / TWRP) untuk instalasi dual boot.
+Phone requirements:
+- Bootloader unlocked.
+- Reliable USB-C cable.
+- Custom recovery (OrangeFox or TWRP) for dual boot installation.
 
 ---
 
-## 2. Pilihan Instalasi
+## 2. Installation Options
 
-1. **[Single Boot postmarketOS](#option-a-single-boot-postmarketos)**: Alpine-based minimal / Plasma Mobile.
-2. **[Single Boot Fedora ARM64](#option-b-single-boot-fedora-arm64)**: Fedora KDE Mobile pada seluruh partisi `userdata`.
-3. **[Dual Boot (AOSP + Fedora)](#option-c-dual-boot-aosp--fedora)**: Android di Slot A dan Fedora Linux di Slot B.
+1. **[Single Boot postmarketOS](#option-a-single-boot-postmarketos)**: Minimal / Plasma Mobile Alpine-based environment.
+2. **[Single Boot Fedora ARM64](#option-b-single-boot-fedora-arm64)**: Full Fedora KDE Mobile across the entire `userdata` partition.
+3. **[Dual Boot (AOSP + Fedora)](#option-c-dual-boot-aosp--fedora)**: Android on Slot A and Fedora Linux on Slot B.
 
 ---
 
 ## Option A: Single Boot postmarketOS
 
-Gunakan `pmbootstrap` untuk build dan flashing langsung ke smartphone:
+Use `pmbootstrap` to build packages and flash directly to the device:
 
 ```sh
-# 1. Masuk ke mode Fastboot (Power + Volume Down)
+# 1. Boot phone into Fastboot mode (Power + Volume Down)
 
-# 2. Hapus OEM DTBO slot B untuk menghindari konflik device tree
+# 2. Erase OEM DTBO on slot B to prevent device tree conflicts
 fastboot erase dtbo_b
 
-# 3. Flash rootfs dan kernel
+# 3. Flash rootfs and kernel
 pmbootstrap flasher flash_rootfs --partition userdata
 pmbootstrap flasher flash_kernel --partition boot_b
 
-# 4. Aktifkan slot B dan reboot
+# 4. Activate slot B and reboot
 fastboot set_active b
 fastboot reboot
 ```
@@ -54,15 +54,15 @@ fastboot reboot
 
 ## Option B: Single Boot Fedora ARM64
 
-### 1. Siapkan Rootfs Fedora
-Download image Fedora KDE Mobile disk (`Fedora-KDE-Mobile-Disk-*.raw.xz`), lalu build sparse image menggunakan skrip otomatisasi:
+### 1. Prepare Fedora Rootfs Sparse Image
+Download a raw Fedora KDE Mobile disk image (`Fedora-KDE-Mobile-Disk-*.raw.xz`), then build the prepared sparse image using the automation script:
 ```sh
 sudo ./build-fedora-rootfs.sh /path/to/Fedora-KDE-Mobile-Disk-*.raw fedora-rootfs.simg
 ```
-*Skrip ini otomatis menginjeksi kernel modules, firmware, profil ALSA UCM2, konfigurasi cellular, modem services, dan utility `qbootctl` ke `/usr/local/bin`.*
+*This script automatically injects kernel modules, non-free firmware, ALSA UCM2 audio profiles, cellular configs, modem services, and the `qbootctl` utility into `/usr/local/bin`.*
 
-### 2. Repack Boot Image untuk `userdata`
-Initramfs perlu diarahkan ke partisi `userdata`:
+### 2. Repack Boot Image for `userdata`
+The initramfs must mount the root subvolume on `userdata`:
 ```sh
 mkdir -p /tmp/boot_unpack
 unpack_bootimg \
@@ -99,18 +99,18 @@ fastboot reboot
 
 ## Option C: Dual Boot (AOSP + Fedora)
 
-Untuk menjalankan Android (AOSP) berdampingan dengan Fedora Linux:
-- Partisi `userdata` (242 GB) dibagi menjadi dua partisi 121 GB menggunakan prebuilt `tools/parted`.
-- Slot A digunakan untuk Android AOSP.
-- Slot B digunakan untuk Fedora Linux.
+To run Android (AOSP) alongside Fedora Linux:
+- The 242 GB `userdata` partition is split into two 121 GB partitions using prebuilt `tools/parted`.
+- Slot A is reserved for Android AOSP.
+- Slot B is reserved for Fedora Linux.
 
-👉 **Ikuti panduan lengkap di [Dual Boot Guide](dualboot.md).**
+👉 **Follow the full guide in [Dual Boot Guide](dualboot.md).**
 
 ---
 
-## Pasca Instalasi
+## Post-Installation
 
-Setelah sistem menyala, buka **[Configuration Guide](configuration.md)** untuk:
-- Mengaktifkan volume audio CS35L41.
-- Setup modem 5G SDX55 dan ganti SIM 1 / 2.
-- Mengganti slot boot antara Android dan Linux.
+After your system boots up, see the **[Configuration Guide](configuration.md)** to:
+- Boost Cirrus Logic CS35L41 speaker volume.
+- Set up the SDX55 5G modem and switch between SIM 1 and SIM 2.
+- Switch active boot slots between Android and Linux.

@@ -1,39 +1,39 @@
 # Hardware UART Debugging Guide for Poco F3 (alioth)
 
-Panduan menangkap log bootloader Android (ABL) dan early console kernel via UART hardware pin pada board Poco F3.
+Guide to capturing Android BootLoader (ABL) and early kernel printk logs using hardware UART test points on the Poco F3 PCB.
 
 ---
 
-## 1. Lokasi Pin UART pada PCB
+## 1. PCB UART Pin Locations
 
-| Titik Uji PCB | Jalur UART | Tegangan Logika | Lokasi Fisik |
+| Test Point | UART Line | Logic Voltage | Location |
 | :--- | :--- | :--- | :--- |
-| **TX** (Test Point) | Serial Output (Phone → PC) | **1.8V** | Sisi depan PCB utama |
-| **TP7307 (RX)** | Serial Input (PC → Phone) | **1.8V** | Sisi belakang PCB utama (memerlukan lepas board) |
-| **GND** | Ground Referensi | 0V | Chassis logam pelindung board |
+| **TX** | Serial Transmit (Phone → PC) | **1.8V** | Front side of main PCB |
+| **TP7307 (RX)** | Serial Receive (PC → Phone) | **1.8V** | Back side of main PCB (requires full board teardown) |
+| **GND** | Ground Reference | 0V | Metal chassis shield |
 
-*Catatan*: Untuk keperluan membaca log bootloader & kernel, kita hanya membutuhkan pin **TX** dan **GND**.
+*Note*: For capturing boot logs, only **TX** and **GND** are necessary.
 
 ![UART Schema](../../images/uart_pins_schema.png)
 ![UART TX on PCB](../../images/Alioth_uart.jpg)
 
 ---
 
-## 2. Rangkaian Level Shifter Transistor (1.8V → 5V / 3.3V)
+## 2. NPN Transistor Level Shifter (1.8V → 5V / 3.3V)
 
-Pin UART pada smartphone beroperasi pada level logika **1.8V**. Menghubungkan langsung pin 1.8V ke logic level 5V Arduino dapat merusak SoC Snapdragon.
+The phone's UART operates at **1.8V logic level**. Connecting it directly to a 5V Arduino will damage the Snapdragon SoC.
 
-Rangkaian level shifter menggunakan transistor NPN umum (BC547B / 2N2222):
+Level shifter schematic using generic NPN transistors (BC547B / 2N2222):
 
 ![Level Shifter Schema](../../images/level_shifter-schema.png)
 
-Pastikan Ground smartphone terhubung ke Ground rangkaian shifter/Arduino sebagai titik referensi potensial bersama.
+Ensure the phone ground is connected to the Arduino/shifter ground to establish a common reference point.
 
 ![Level Shifter Photo](../../images/uart_connection_photo.jpeg)
 
 ---
 
-## 3. Firmware Arduino UNO Passthrough (Baud: 115200)
+## 3. Arduino UNO Passthrough Firmware (Baud: 115200)
 
 ```cpp
 String receivedMessage;
@@ -57,31 +57,31 @@ void loop() {
 }
 ```
 
-*Perhatian*: Lepas kabel pada Pin 0 & 1 Arduino saat mengunggah sketch agar flashing bootloader Arduino tidak bentrok.
+*Caution*: Disconnect pins 0 and 1 while uploading code to the Arduino to avoid bootloader serial conflicts.
 
 ---
 
-## 4. Konfigurasi Kernel untuk Output UART
+## 4. Kernel UART Configuration
 
 1. **Device Tree Patch**:
-   DTB kernel harus memetakan UART console ke serial0 (`ttyMSM0`):
-   Lihat patch `linux-postmarketos-qcom-sm8250-alioth/0001-modified-dts-to-see-kernel-data-on-uart.patch`.
+   The kernel DTB must map `serial0` to `ttyMSM0`:
+   See `linux-postmarketos-qcom-sm8250-alioth/0001-modified-dts-to-see-kernel-data-on-uart.patch`.
 
 2. **Kernel Cmdline**:
    ```sh
    console=ttyMSM0,115200n8 earlycon earlyprintk loglevel=15 console=tty0
    ```
-   - `ttyMSM0,115200n8`: Port console fisik Qualcomm MSM pada baud rate 115200.
-   - `earlycon` & `earlyprintk`: Menampilkan output printk sebelum tty subsystem lengkap terinisialisasi.
-   - `console=tty0`: Melakukan mirror log ke framebuffer layar smartphone.
+   - `ttyMSM0,115200n8`: Primary physical serial port at 115200 baud.
+   - `earlycon` & `earlyprintk`: Displays boot output before standard tty subsystems initialize.
+   - `console=tty0`: Mirrors console output to the phone screen.
 
 ---
 
-## 5. Menangkap Log via Minicom
+## 5. Capturing Logs via Minicom
 
-Hubungkan Arduino ke PC Host via USB:
+Connect Arduino to your host PC via USB:
 ```bash
 minicom -b 115200 -D /dev/ttyACM0 -C uart_logs.txt
 ```
 
-Arsip log bootloader dan dmesg awal tersimpan di direktori `Notes/uart_logs/`.
+Raw captured bootloader and kernel dmesg logs are archived in `Notes/uart_logs/`.

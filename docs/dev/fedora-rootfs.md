@@ -1,61 +1,61 @@
 # Fedora Rootfs Automation & Provisioning Guide
 
-Dokumentasi skrip otomatisasi penyiapan rootfs Fedora ARM64 (`prepare-fedora-rootfs.sh` dan `build-fedora-rootfs.sh`) untuk Xiaomi Poco F3.
+Technical documentation for the automated Fedora ARM64 rootfs preparation scripts (`prepare-fedora-rootfs.sh` and `build-fedora-rootfs.sh`) for the Xiaomi Poco F3.
 
 ---
 
-## 1. Alur Kerja Otomatisasi
+## 1. Automation Workflow
 
-Untuk menjalankan Fedora secara langsung pada Poco F3, image mentah generic ARM64 (`Fedora-KDE-Mobile-Disk-*.raw`) harus disuntikkan konfigurasi driver dan hardware sebelum di-flash ke UFS.
+To boot Fedora directly on the Poco F3, a generic upstream ARM64 disk image (`Fedora-KDE-Mobile-Disk-*.raw`) must be provisioned with hardware configurations and drivers before being written to UFS storage.
 
-### Skrip Utama:
+### Primary Scripts:
 1. **`build-fedora-rootfs.sh [raw_image] [out_simg]`**:
-   - Menghubungkan raw disk image ke loop device (`losetup -Pf`).
-   - Melakukan mount subvolume Btrfs root (`-o subvol=root /dev/loopXp3 /mnt/fedora`).
-   - Menjalankan `prepare-fedora-rootfs.sh /mnt/fedora`.
-   - Mengonversi subvolume yang telah dipatch menjadi Android Sparse Image (`img2simg`).
+   - Attaches the raw disk image to a loopback device (`losetup -Pf`).
+   - Mounts the Btrfs root subvolume (`-o subvol=root /dev/loopXp3 /mnt/fedora`).
+   - Runs `prepare-fedora-rootfs.sh /mnt/fedora`.
+   - Converts the provisioned partition to an Android Sparse Image (`img2simg`).
 2. **`prepare-fedora-rootfs.sh [rootfs_mount_dir]`**:
-   - Menjalankan 8 tahap provisioning hardware secara langsung ke dalam rootfs target.
+   - Executes 8 distinct provisioning stages directly into the mounted root filesystem.
 
 ---
 
-## 2. Rincian 8 Tahap Provisioning
+## 2. The 8 Provisioning Stages
 
 1. **Kernel Modules & Firmware**:
-   - Mengekstrak modul kernel dari paket APK pmbootstrap terbaru (`linux-postmarketos-qcom-sm8250-alioth-*.apk`).
-   - Menyalin berkas firmware non-free dari pmbootstrap (`/lib/firmware`).
-   - Menjalankan `depmod -a -b ${ROOTFS}` untuk semua versi kernel yang terdeteksi.
+   - Extracts kernel modules from the newest pmbootstrap APK (`linux-postmarketos-qcom-sm8250-alioth-*.apk`).
+   - Copies non-free firmware from the local pmbootstrap rootfs (`/lib/firmware`).
+   - Runs `depmod -a -b ${ROOTFS}` for all detected kernel module trees.
 
 2. **Audio UCM2 & ALSA State**:
-   - Menyalin profil `alioth.conf` dan `HiFi.conf` ke `/usr/share/alsa/ucm2/Xiaomi/alioth/`.
-   - Membuat symlink otomatis untuk variasi nama driver soundcard SM8250.
-   - Menyuntikkan `asound.state` yang telah terkalibrasi ke `/var/lib/alsa/asound.state`.
+   - Copies `alioth.conf` and `HiFi.conf` into `/usr/share/alsa/ucm2/Xiaomi/alioth/`.
+   - Creates symlinks for SM8250 sound card naming variations.
+   - Injects the calibrated `asound.state` into `/var/lib/alsa/asound.state`.
 
 3. **Bluetooth Controller**:
-   - Menyalin script inisialisasi `/usr/local/bin/alioth-bluetooth-init.sh`.
-   - Mengaktifkan unit systemd `alioth-bluetooth.service`.
-   - Mengonfigurasi modul autoload `bluetooth.conf`.
+   - Copies the hardware bring-up script `/usr/local/bin/alioth-bluetooth-init.sh`.
+   - Enables the `alioth-bluetooth.service` systemd unit.
+   - Deploys the module autoload file `bluetooth.conf`.
 
-4. **Network, Sensor, & Plasma Tweaks**:
-   - Menonaktifkan Wi-Fi power save via `/etc/NetworkManager/conf.d/wifi-powersave.conf`.
-   - Menyalin udev rule sensor SSC (`81-libssc-xiaomi-alioth.rules`).
-   - Menonaktifkan dialog pop-up KWallet di Plasma Mobile (`kwalletrc`).
-   - Menyiapkan profil koneksi seluler otomatis (`cellular.nmconnection`).
+4. **Network, Sensor, & Plasma Mobile Tweaks**:
+   - Disables Wi-Fi power save via `/etc/NetworkManager/conf.d/wifi-powersave.conf`.
+   - Copies SSC sensor udev rules (`81-libssc-xiaomi-alioth.rules`).
+   - Disables KWallet popups on Plasma Mobile (`kwalletrc`).
+   - Preconfigures an automatic cellular data profile (`cellular.nmconnection`).
 
-5. **Modem Daemons, Helper, & SIM Switching**:
-   - Memasang script Python Sahara & EFS (`sahara_srv.py`, `efs_srv.py`, `data_up.py`).
-   - Memasang prebuilt binary daemon `tqftpserv` dan `qbootctl`.
-   - Menyiapkan shortcut aplikasi desktop Plasma Mobile untuk switch SIM 1 dan SIM 2.
-   - Mengaktifkan layanan `alioth-modem.service`, `tqftpserv.service`, dan `alioth-modem-firmware.service`.
+5. **Modem Daemons, Helpers, & SIM Switching**:
+   - Installs Sahara and EFS Python daemons (`sahara_srv.py`, `efs_srv.py`, `data_up.py`).
+   - Deploys prebuilt `tqftpserv` and `qbootctl` binaries.
+   - Adds Plasma Mobile desktop shortcuts to toggle between SIM 1 and SIM 2.
+   - Enables `alioth-modem.service`, `tqftpserv.service`, and `alioth-modem-firmware.service`.
 
-6. **Kredensial Root & Akses SSH**:
-   - Mengatur password default user `root` menjadi `fedora`.
-   - Menginjeksi SSH public keys host (`~/.ssh/id_*.pub`) ke `/root/.ssh/authorized_keys`.
-   - Menghasilkan host key SSH (rsa, ecdsa, ed25519) dan mengaktifkan service `sshd`.
-   - Menginstal custom RPM (ModemManager dengan patch alioth) jika tersedia di folder `rpms/`.
+6. **Root Credentials & SSH Access**:
+   - Sets default root password to `fedora`.
+   - Injects the host user's SSH public keys (`~/.ssh/id_*.pub`) into `/root/.ssh/authorized_keys`.
+   - Generates SSH host keys (RSA, ECDSA, ED25519) and enables `sshd.service`.
+   - Installs custom RPMs (such as patched ModemManager) if present in `rpms/`.
 
 7. **Patching `/etc/fstab`**:
-   - Mengomentari entri `/boot` bawaan Fedora agar tidak bentrok dengan partisi Android boot A/B.
+   - Comments out the upstream Fedora `/boot` entry to prevent mounting conflicts with Android A/B boot partitions.
 
-8. **Proteksi Paket di DNF**:
-   - Menambahkan aturan `excludepkgs=kernel* ModemManager*` ke `/etc/dnf/dnf.conf` agar update sistem tidak menimpa kernel custom alioth.
+8. **Package Protection in DNF**:
+   - Adds `excludepkgs=kernel* ModemManager*` to `/etc/dnf/dnf.conf` to protect custom alioth kernel packages during system upgrades.

@@ -1,48 +1,48 @@
 # Device Tree & Audio Architecture Guide
 
-Dokumentasi penanganan Device Tree Source (DTS), ekstraksi DTB, dan debugging subsistem audio CS35L41 pada Xiaomi Poco F3 (`alioth`).
+Documentation for Device Tree Source (DTS) handling, DTB decompilation, and CS35L41 audio subsystem debugging on the Xiaomi Poco F3 (`alioth`).
 
 ---
 
-## 1. Ekstraksi Device Tree Source (DTS)
+## 1. Extracting Device Tree Source (DTS)
 
-Untuk memverifikasi node hardware dan pemetaan pinout terhadap kernel Android OEM:
+To inspect hardware nodes and verify pin multiplexing against the OEM Android kernel:
 
-### 1. Ekstraksi dari Image LineageOS / Android Vendor Boot
-Poco F3 menggunakan partisi `vendor_boot` (Android Header Version 3):
+### 1. Extracting from LineageOS / Android Vendor Boot
+The Poco F3 uses a `vendor_boot` partition (Android Boot Header Version 3):
 ```sh
-# Ekstrak vendor_boot.img
+# Unpack vendor_boot.img
 unpack_bootimg --boot_img vendor_boot.img --out /tmp/vb_out
 
-# Decompile dtb biner menjadi dts yang terbaca
+# Decompile DTB binary into readable DTS
 dtc -I dtb -O dts -o alioth_vendor.dts /tmp/vb_out/dtb
 ```
 
-### 2. Ekstraksi dari postmarketOS yang Berjalan
+### 2. Extracting from a Running postmarketOS Device
 ```sh
 dtc -I dtb -O dts -o alioth-mainline.dts /boot/sm8250-xiaomi-alioth.dtb
 ```
 
-Arsip hasil ekstraksi dts tersedia di folder `Notes/dts/`.
+DTS dump archives are available in `Notes/dts/`.
 
 ---
 
-## 2. Subsistem Audio: Dual Cirrus Logic CS35L41
+## 2. Audio Subsystem: Dual Cirrus Logic CS35L41
 
-Alioth menggunakan dua smart amplifier hardware Cirrus Logic CS35L41 yang dikendalikan via bus I2C:
-- **Earpiece / Receiver (RCV)**: I2C slave address `0x40` pada bus `&i2c3`.
-- **Loudspeaker (LCV)**: I2C slave address `0x41` pada bus `&i2c3`.
+Alioth uses two Cirrus Logic CS35L41 hardware smart amplifiers controlled via I2C:
+- **Earpiece / Receiver (RCV)**: I2C slave address `0x40` on bus `&i2c3`.
+- **Loudspeaker (LCV)**: I2C slave address `0x41` on bus `&i2c3`.
 
-### Investigasi "Mystery Buzz" saat Suspend / Resume
-Pada iterasi awal porting, muncul bunyi dengung singkat ("buzz") sesaat setelah device dibangunkan dari suspend:
-- Sumber masalah: Urutan power rail sequencing regulator pada DTS dan penanganan reset GPIO amplifier CS35L41 saat transisi state D3cold → D0.
-- Detail catatan debugging lengkap dapat dibaca pada `Notes/001-debuggin_buzz.md`.
+### Investigating the "Mystery Buzz" on Suspend / Resume
+Early porting iterations suffered from a brief audible buzz immediately upon waking from system suspend:
+- Cause: Power rail sequencing order and CS35L41 amplifier GPIO reset handling during D3cold → D0 transitions.
+- Full debugging process and DTS adjustments are documented in `Notes/001-debuggin_buzz.md`.
 
 ---
 
-## 3. Profil ALSA Use Case Manager (UCM2)
+## 3. ALSA Use Case Manager (UCM2) Profiles
 
-Berkas UCM2 diletakkan di `device-xiaomi-alioth/alsa-ucm-conf/`:
-- `alioth.conf`: Pendefinisian sound card name dan routing case.
-- `HiFi.conf`: Pengaturan volume mixer, routing PCM, dan enabling amplifier stream.
-- `asound.state`: Kalibrasi default ALSA channel volume level.
+UCM2 profiles are located in `device-xiaomi-alioth/alsa-ucm-conf/`:
+- `alioth.conf`: Card identification and profile entry points.
+- `HiFi.conf`: Mixer controls, PCM routing, and amplifier stream management.
+- `asound.state`: Default ALSA channel volume calibration.

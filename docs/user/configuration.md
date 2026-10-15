@@ -1,54 +1,53 @@
 # User Configuration & Daily Usage Guide
 
-Panduan penggunaan harian, konfigurasi hardware, audio, jaringan seluler, dan switching OS pada Xiaomi Poco F3 (`alioth`).
+Practical tips, hardware audio calibration, cellular networking, and system switching for the Xiaomi Poco F3 (`alioth`).
 
 ---
 
-## 1. Konfigurasi Audio CS35L41
+## 1. Audio Volume Calibration (CS35L41)
 
-Amplifier speaker Cirrus Logic CS35L41 memiliki gain hardware konservatif secara default di ALSA:
+The Cirrus Logic CS35L41 hardware amplifiers default to conservative gain stages in ALSA:
 
-### Meningkatkan Volume Speaker
-1. Di terminal smartphone, jalankan mixer:
+### Boosting Speaker Volume
+1. On the phone terminal, launch `alsamixer`:
    ```sh
    alsamixer
    ```
-2. Tekan **F6** lalu pilih kartu suara Qualcomm (sm8250).
-3. Naikkan slider berikut ke level maksimum:
+2. Press **F6** and select the Qualcomm sound card (sm8250).
+3. Raise the following mixer sliders to maximum:
    - `RCV Analog PCM Volume`
    - `LCV Analog PCM Volume`
    - `RCV Digital PCM Volume`
    - `LCV Digital PCM Volume`
-4. Simpan status mixer agar permanen:
+4. Persist the mixer state across reboots:
    ```sh
    sudo alsactl store
    ```
-5. Atau di **KDE Sound Settings**, aktifkan opsi **"Raise maximum volume" / "Allow volume over 100%"**.
+5. Alternatively, in **KDE Sound Settings**, enable **"Raise maximum volume" / "Allow volume over 100%"**.
 
 ---
 
-## 2. Jaringan Seluler 5G & Modem SDX55
+## 2. 5G Cellular Networking & SDX55 Modem
 
-Modem Qualcomm SDX55 terhubung via PCIe dan diatur oleh layanan `alioth-modem`, `tqftpserv`, dan `alioth-modem-firmware`.
+The Qualcomm SDX55 modem is connected over PCIe and managed by `alioth-modem`, `tqftpserv`, and `alioth-modem-firmware` services.
 
-### Status Modem
-Cek deteksi modem di ModemManager:
+### Checking Modem Status
 ```sh
 mmcli -L
 mmcli -m 0
 ```
 
-### Mengganti Slot SIM Aktif
-Poco F3 mendukung dual SIM fisik. Mainline kernel mengarahkan data seluler ke satu modem aktif:
+### Switching Active SIM Slots
+Poco F3 supports dual physical SIM cards. The mainline kernel routes cellular data to the active SIM slot:
 
 - **Via GUI**:
-  Buka menu aplikasi Plasma Mobile → pilih ikon **"Ganti ke SIM 1"** atau **"Ganti ke SIM 2"**.
-- **Via Terminal**:
+  Open the Plasma Mobile application launcher → tap **"Switch to SIM 1"** or **"Switch to SIM 2"**.
+- **Via CLI**:
   ```sh
-  # Aktifkan SIM 1
+  # Switch data to SIM 1
   sudo alioth-switch-sim 1
 
-  # Aktifkan SIM 2
+  # Switch data to SIM 2
   sudo alioth-switch-sim 2
   ```
 
@@ -57,37 +56,37 @@ Poco F3 mendukung dual SIM fisik. Mainline kernel mengarahkan data seluler ke sa
 ## 3. Wi-Fi & Bluetooth
 
 - **Wi-Fi**:
-  Gunakan GUI Plasma Mobile atau tool terminal:
+  Connect using Plasma Mobile settings or terminal:
   ```sh
   nmtui
-  # atau
-  nmcli dev wifi connect "NAMA_SSID" password "PASSWORD_WIFI"
+  # or
+  nmcli dev wifi connect "SSID_NAME" password "WIFI_PASSWORD"
   ```
 - **Bluetooth**:
-  Layanan `alioth-bluetooth.service` berjalan otomatis saat boot dan menginisialisasi controller via script `/usr/local/bin/alioth-bluetooth-init.sh`. Cek status:
+  The `alioth-bluetooth.service` unit starts automatically at boot and loads firmware via `/usr/local/bin/alioth-bluetooth-init.sh`. Check controller status:
   ```sh
   bluetoothctl show
   ```
 
 ---
 
-## 4. Akses SSH & Remote Shell
+## 4. SSH Remote Access
 
-Image Fedora yang disiapkan melalui `prepare-fedora-rootfs.sh` otomatis mengaktifkan SSH server:
+Fedora images provisioned via `prepare-fedora-rootfs.sh` automatically enable the SSH daemon:
 - **Port**: 22
 - **User**: `root`
 - **Default password**: `fedora`
-- **SSH Key**: Public key host PC (`~/.ssh/id_*.pub`) otomatis disuntikkan ke `/root/.ssh/authorized_keys`.
+- **SSH Key**: The host PC's public keys (`~/.ssh/id_*.pub`) are automatically injected into `/root/.ssh/authorized_keys`.
 
-Hubungkan smartphone ke PC via kabel USB atau jaringan Wi-Fi lokal:
+Connect from your PC over USB tethering or local Wi-Fi:
 ```sh
 ssh root@172.16.42.1
-# atau via IP Wi-Fi
+# or via local Wi-Fi IP
 ssh root@192.168.x.x
 ```
 
 ---
 
-## 5. Update Sistem (DNF Safety)
+## 5. System Updates (DNF Safety)
 
-Skrip penyedia Fedora otomatis memblokir paket kernel dan ModemManager dari DNF di `/etc/dnf/dnf.conf` (`excludepkgs=kernel* ModemManager*`). Hal ini krusial agar `dnf update` tidak menimpa kernel mainline kustom alioth dengan kernel generik Fedora aarch64.
+The rootfs provisioning script automatically excludes kernel and ModemManager packages from DNF in `/etc/dnf/dnf.conf` (`excludepkgs=kernel* ModemManager*`). This prevents `dnf upgrade` from overwriting the custom alioth mainline kernel with upstream generic Fedora aarch64 kernels.
