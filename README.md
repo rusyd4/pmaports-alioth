@@ -13,7 +13,7 @@ Mainline Linux kernel, postmarketOS packages, and Fedora ARM64 (KDE Plasma Mobil
 * **Audio**: Stereo sound via dual Cirrus Logic CS35L41 amplifiers with calibrated ALSA UCM2 profiles
 * **Wi-Fi 6**: Qualcomm QCA6390 (ath11k via PCIe)
 * **Bluetooth**: Bluetooth 5.1 via `hci_qca` UART
-* **Cellular Data (5G / 4G)**: Qualcomm Snapdragon X55 (SDX55 flashless modem via PCIe MHI, QRTR, and RmNet)
+* **Cellular Data (5G / 4G)**: Qualcomm Snapdragon X55 (SDX55 flashless modem via PCIe MHI, QRTR, and RmNet; partial, see [Known Bugs](#known-bugs--limitations))
 * **Dual SIM**: Carrier registration and slot selection via Plasma Mobile UI and `alioth-switch-sim`
 * **Sensors**: Accelerometer, gyroscope, light, and proximity sensors via `libssc`
 * **Battery & Power**: Accurate battery percentage, charging status, and thermal sensors
@@ -22,11 +22,15 @@ Mainline Linux kernel, postmarketOS packages, and Fedora ARM64 (KDE Plasma Mobil
 ### 🟡 Work in Progress / What Doesn't Work
 * **Camera**: Sensors and ISP (CamX / CAMSS) work in progress
 * **VoLTE / In-Call Voice Audio**: Audio routing for cellular voice calls in development
+* **Mobile Data (Single SIM)**: Mobile data only works when both SIM slots are populated (see [Bugs](#known-bugs--limitations))
 * **Modem Wake from Sleep**: Cellular modem does not recover after system suspend `s2idle` (see [Bugs](#known-bugs--limitations))
 
 ---
 
 ## Known Bugs & Limitations
+
+* **Mobile Data Partial (Requires Both SIM Slots Filled)**:
+  Mobile data currently only works if both physical SIM card slots are populated. If only a single SIM card is inserted, mobile data fails to establish a connection.
 
 * **Cellular Disconnect after Sleep (`s2idle`)**:
   When the device wakes up from system suspend, the SDX55 modem PCIe link desynchronizes (`mhi0: Did not enter M0 state`), dropping cellular data until reboot. Suspend is kept enabled by default to preserve battery life.

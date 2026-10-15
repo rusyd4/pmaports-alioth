@@ -40,6 +40,8 @@ mmcli -m 0
 ### Switching Active SIM Slots
 Poco F3 supports dual physical SIM cards. The mainline kernel routes cellular data to the active SIM slot:
 
+> **⚠️ Known Limitation**: Mobile data is currently partial and only functions if both physical SIM card slots are populated. If only a single SIM card is inserted, mobile data will not work.
+
 - **Via GUI**:
   Open the Plasma Mobile application launcher → tap **"Switch to SIM 1"** or **"Switch to SIM 2"**.
 - **Via CLI**:
