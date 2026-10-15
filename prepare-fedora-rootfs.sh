@@ -205,18 +205,33 @@ enable alioth-modem-firmware.service
 enable alioth-bluetooth.service
 EOF_PRESET
 
+# Prevent watchdog freeze on reboot (Qualcomm SM8250 hardware WDT limit is 32s, systemd defaults to 10min)
+mkdir -p "${ROOTFS}/etc/systemd/system.conf.d"
+cat << 'EOF_WATCHDOG' > "${ROOTFS}/etc/systemd/system.conf.d/00-alioth-watchdog.conf"
+[Manager]
+RebootWatchdogSec=0
+ShutdownWatchdogSec=0
+DefaultTimeoutStopSec=10s
+EOF_WATCHDOG
+
 ln -sf /dev/null "${ROOTFS}/etc/systemd/system/firewalld.service"
 
 echo "==> [7/8] Patching /etc/fstab..."
 sed -i '/\/boot/s/^/#/' "${ROOTFS}/etc/fstab"
 
 echo "==> [8/8] Blocking Fedora kernel and ModemManager packages in DNF..."
-mkdir -p "${ROOTFS}/etc/dnf"
+mkdir -p "${ROOTFS}/etc/dnf/dnf.conf.d"
+cat << 'EOF_DNF_EXCLUDE' > "${ROOTFS}/etc/dnf/dnf.conf.d/00-alioth-exclude.conf"
+[main]
+exclude=kernel* ModemManager*
+excludepkgs=kernel* ModemManager*
+EOF_DNF_EXCLUDE
+
 if [ -f "${ROOTFS}/etc/dnf/dnf.conf" ]; then
     grep -q "excludepkgs=.*kernel" "${ROOTFS}/etc/dnf/dnf.conf" || echo "excludepkgs=kernel*" >> "${ROOTFS}/etc/dnf/dnf.conf"
     grep -q "ModemManager" "${ROOTFS}/etc/dnf/dnf.conf" || sed -i '/excludepkgs=/ s/$/ ModemManager*/' "${ROOTFS}/etc/dnf/dnf.conf"
 else
-    printf "[main]\nexcludepkgs=kernel* ModemManager*\n" > "${ROOTFS}/etc/dnf/dnf.conf"
+    printf "[main]\nexclude=kernel* ModemManager*\nexcludepkgs=kernel* ModemManager*\n" > "${ROOTFS}/etc/dnf/dnf.conf"
 fi
 
 echo "==> Configuration complete for ${ROOTFS}!"
