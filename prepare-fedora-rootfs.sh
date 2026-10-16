@@ -223,15 +223,15 @@ echo "==> [8/8] Blocking Fedora kernel and ModemManager packages in DNF..."
 mkdir -p "${ROOTFS}/etc/dnf/dnf.conf.d"
 cat << 'EOF_DNF_EXCLUDE' > "${ROOTFS}/etc/dnf/dnf.conf.d/00-alioth-exclude.conf"
 [main]
-exclude=kernel* ModemManager*
-excludepkgs=kernel* ModemManager*
+exclude=kernel,kernel-core,kernel-modules*,kernel-uki*,kernel-debug*,ModemManager*
+excludepkgs=kernel,kernel-core,kernel-modules*,kernel-uki*,kernel-debug*,ModemManager*
 EOF_DNF_EXCLUDE
 
 if [ -f "${ROOTFS}/etc/dnf/dnf.conf" ]; then
-    grep -q "excludepkgs=.*kernel" "${ROOTFS}/etc/dnf/dnf.conf" || echo "excludepkgs=kernel*" >> "${ROOTFS}/etc/dnf/dnf.conf"
-    grep -q "ModemManager" "${ROOTFS}/etc/dnf/dnf.conf" || sed -i '/excludepkgs=/ s/$/ ModemManager*/' "${ROOTFS}/etc/dnf/dnf.conf"
+    sed -i '/excludepkgs=.*kernel/d; /exclude=.*kernel/d' "${ROOTFS}/etc/dnf/dnf.conf"
+    echo "excludepkgs=kernel,kernel-core,kernel-modules*,kernel-uki*,kernel-debug*,ModemManager*" >> "${ROOTFS}/etc/dnf/dnf.conf"
 else
-    printf "[main]\nexclude=kernel* ModemManager*\nexcludepkgs=kernel* ModemManager*\n" > "${ROOTFS}/etc/dnf/dnf.conf"
+    printf "[main]\nexclude=kernel,kernel-core,kernel-modules*,kernel-uki*,kernel-debug*,ModemManager*\nexcludepkgs=kernel,kernel-core,kernel-modules*,kernel-uki*,kernel-debug*,ModemManager*\n" > "${ROOTFS}/etc/dnf/dnf.conf"
 fi
 
 echo "==> Configuration complete for ${ROOTFS}!"

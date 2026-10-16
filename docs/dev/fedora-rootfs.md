@@ -59,4 +59,4 @@ To boot Fedora directly on the Poco F3, a generic upstream ARM64 disk image (`Fe
    - Comments out the upstream Fedora `/boot` entry to prevent mounting conflicts with Android A/B boot partitions.
 
 8. **Package Protection in DNF**:
-   - Injects `/etc/dnf/dnf.conf.d/00-alioth-exclude.conf` and updates `/etc/dnf/dnf.conf` with `exclude=kernel* ModemManager*` and `excludepkgs=kernel* ModemManager*` to protect custom alioth kernel and ModemManager packages across DNF 4 and DNF 5 during system upgrades.
+   - Injects `/etc/dnf/dnf.conf.d/00-alioth-exclude.conf` and updates `/etc/dnf/dnf.conf` with `exclude=kernel,kernel-core,kernel-modules*,kernel-uki*,kernel-debug*,ModemManager*` and `excludepkgs=kernel,kernel-core,kernel-modules*,kernel-uki*,kernel-debug*,ModemManager*` to protect custom alioth kernel and ModemManager packages across DNF 4 and DNF 5 during system upgrades while permitting userspace `kernel-headers`.

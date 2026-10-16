@@ -91,4 +91,4 @@ ssh root@192.168.x.x
 
 ## 5. System Updates (DNF Safety)
 
-The rootfs provisioning script automatically excludes kernel and ModemManager packages from DNF in `/etc/dnf/dnf.conf` (`excludepkgs=kernel* ModemManager*`). This prevents `dnf upgrade` from overwriting the custom alioth mainline kernel with upstream generic Fedora aarch64 kernels.
+The rootfs provisioning script automatically excludes kernel and ModemManager packages from DNF in `/etc/dnf/dnf.conf` and `/etc/dnf/dnf.conf.d/00-alioth-exclude.conf` (`excludepkgs=kernel,kernel-core,kernel-modules*,kernel-uki*,kernel-debug*,ModemManager*`). This prevents `dnf upgrade` from overwriting the custom alioth mainline kernel with upstream generic Fedora aarch64 kernels while still permitting development dependencies like `kernel-headers`.
